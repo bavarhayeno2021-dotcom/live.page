@@ -76,7 +76,6 @@
 <div class="menu-wrap">
   <button id="menuBtn" aria-label="منو">☰</button>
   <div class="menu" id="menu" hidden>
-    <button type="button" data-open="signup" data-i18n="signup"></button>
     <button type="button" data-open="signin" data-i18n="signin"></button>
     <div class="mset">
       <label><span data-i18n="themeLbl"></span>
@@ -99,16 +98,6 @@
 <div class="modal" id="modal" hidden>
   <div class="win">
     <button class="close" id="closeBtn" type="button" data-i18n-aria="close" aria-label="بستن">×</button>
-    <form id="signupForm" hidden>
-      <h2 data-i18n="signup"></h2>
-      <label><span data-i18n="username"></span> <input name="nick" autocomplete="nickname"></label>
-      <label><span data-i18n="email"></span> <input name="email" type="email" autocomplete="email"></label>
-      <label><span data-i18n="password"></span> <input name="pass" type="password" autocomplete="new-password"></label>
-      <label><span data-i18n="repeatPassword"></span> <input name="pass2" type="password" autocomplete="new-password"></label>
-      <label><span data-i18n="captcha"></span> <span id="capQ"></span> <input name="cap" inputmode="numeric"></label>
-      <button type="submit" data-i18n="register"></button>
-      <p class="msg" id="signupMsg"></p>
-    </form>
     <form id="signinForm" hidden>
       <h2 data-i18n="signin"></h2>
       <label><span data-i18n="email"></span> <input name="email" type="email" autocomplete="email"></label>
@@ -336,11 +325,11 @@ const menuBtn = document.getElementById('menuBtn');
 const menu = document.getElementById('menu');
 const modal = document.getElementById('modal');
 const closeBtn = document.getElementById('closeBtn');
-const signupForm = document.getElementById('signupForm');
+const signupForm = document.createElement('form');
 const signinForm = document.getElementById('signinForm');
 let capAns = 0;
 let capA = 0, capB = 0;
-function renderCap(){ document.getElementById("capQ").textContent = capA + " + " + capB + " = ?"; }
+function renderCap(){ const q=document.getElementById("capQ"); if(q) q.textContent = capA + " + " + capB + " = ?"; }
 
 function newCaptcha(){
   capA = 1 + Math.floor(Math.random()*9);
@@ -356,7 +345,6 @@ function openForm(which){
   signinForm.hidden = which !== 'signin';
   signupForm.reset();
   signinForm.reset();
-  document.getElementById('signupMsg').textContent = '';
   document.getElementById('signinMsg').textContent = '';
   newCaptcha();
 }
