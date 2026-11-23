@@ -4138,6 +4138,25 @@ const parseNums=str=>str.split(/[\s,،]+/).map(x=>x.trim()).filter(Boolean).map(
 function rSide(b,v){R_SIDE=v;[...b.parentElement.children].forEach(x=>x.classList.toggle("on",x===b));buildRail();}
 function rAuto(b,v){R_AUTO=v;[...b.parentElement.children].forEach(x=>x.classList.toggle("on",x===b));}
 var R_GEAR=1;
+var __railTimer=null;
+function railReadyCheck(e){
+  try{
+    const k=(e&&e.target&&e.target.dataset&&e.target.dataset.k)||"";
+    if(!/_[012]$/.test(k))return;
+    clearTimeout(__railTimer);
+    if(window.__calcOpened)return;
+    __railTimer=setTimeout(function(){
+      const g=$("railGrid");if(!g)return;
+      const trs=[...g.querySelectorAll("tr")].slice(1,4);
+      if(trs.length<3)return;
+      const full=trs.every(tr=>[...tr.querySelectorAll("input")].every(i=>i.value.trim()!==""));
+      if(!full)return;
+      window.__calcOpened=true;
+      location.href="calc.html";
+    },1200);
+  }catch(err){}
+}
+window.addEventListener("pageshow",function(){window.__calcOpened=false;});
 function pushRailToCalc(){
   try{
     const g=$("railGrid");if(!g)return;
@@ -4170,6 +4189,7 @@ function buildRail(){
   $("railGrid").innerHTML=h+"</table>";
   $("railGrid").querySelectorAll('input[data-k$="_2"]').forEach(i=>i.addEventListener("input",gearRecalc));
   $("railGrid").querySelectorAll("input").forEach(i=>i.addEventListener("input",pushRailToCalc));
+  $("railGrid").querySelectorAll("input").forEach(i=>i.addEventListener("input",railReadyCheck));
   gearRecalc();
   $("railGrid").querySelectorAll("input").forEach(i=>i.addEventListener("keydown",e=>{if(e.key==="Enter")runRail();}));
 }
