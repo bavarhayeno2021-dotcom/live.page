@@ -4139,7 +4139,10 @@ function rSide(b,v){R_SIDE=v;[...b.parentElement.children].forEach(x=>x.classLis
 function rAuto(b,v){R_AUTO=v;[...b.parentElement.children].forEach(x=>x.classList.toggle("on",x===b));}
 var R_GEAR=1;
 var __railTimer=null;
+// انتقال خودکار ریل به محاسبات غیرفعال است (کاربر خواست)؛ باز کردن محاسبات فقط با دستی
+const RAIL_AUTO_REDIRECT=false;
 function railReadyCheck(e){
+  if(!RAIL_AUTO_REDIRECT)return;
   try{
     const k=(e&&e.target&&e.target.dataset&&e.target.dataset.k)||"";
     if(!/_[012]$/.test(k))return;
