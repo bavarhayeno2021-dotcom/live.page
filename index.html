@@ -4160,7 +4160,7 @@ window.addEventListener("pageshow",function(){window.__calcOpened=false;});
 function pushRailToCalc(){
   try{
     const g=$("railGrid");if(!g)return;
-    const rows=[...g.querySelectorAll("tr")].slice(1,4).map(function(tr){return [...tr.querySelectorAll("input")].map(function(i){return i.value;});});
+    const rows=[...g.querySelectorAll("tr")].slice(1).map(function(tr){return [...tr.querySelectorAll("input")].map(function(i){return i.value;});});
     localStorage.setItem("formul.rail.table.v1",JSON.stringify({rows:rows}));
   }catch(e){}
 }
