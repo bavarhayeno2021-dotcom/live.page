@@ -110,13 +110,13 @@
 
 <div class="wrap">
   <div class="ctls">
-    <div class="ctl" style="display:none">
+    <div class="ctl">
       <span data-i18n="rows"></span>
       <button id="delRow">−</button>
       <b id="rowN">3</b>
       <button id="addRow">+</button>
     </div>
-    <div class="ctl" style="display:none">
+    <div class="ctl">
       <span data-i18n="cols"></span>
       <button id="delCol">−</button>
       <b id="colN">12</b>
@@ -166,7 +166,7 @@ function applyLang(){
   if (typeof renderCap === 'function') renderCap();
 }
 let rows = 3, cols = 12;
-const MIN_ROWS = 3, MAX_ROWS = 11, MAX_COLS = 12, MIN_COLS = 12; // ردیف‌های افقی کل جدول (با ردیف جمع): ۴ تا ۱۲؛ ستون‌ها ثابت ۱۲
+const MIN_ROWS = 3, MAX_ROWS = 11, MAX_COLS = 12, MIN_COLS = 1; // ردیف‌های افقی کل جدول (با ردیف جمع): ۴ تا ۱۲؛ ستون‌ها ثابت ۱۲
 const gridEl = document.getElementById('grid');
 
 const sumOf = a => a.reduce((x,y)=>x+y,0);
@@ -233,17 +233,28 @@ function calcHtml(sums){
 }
 
 // جمع ستون‌ها زیر هر ستون، معادلهٔ جمع مرتب، و نمای محاسبه
+// فقط ستون‌هایی که حداقل یک عدد دارند (ستون خالی صفر حساب نمی‌شود)
+function filledSums(vals, sums){
+  const out = [];
+  for(let c=0;c<sums.length;c++){
+    const any = vals.some(r => { const v = (r[c]==null) ? '' : String(r[c]).trim(); return v !== ''; });
+    if(any) out.push(sums[c]);
+  }
+  return out;
+}
 function updateSums(){
-  const sums = colSums(readVals());
+  const vals = readVals();
+  const sums = colSums(vals);
+  const used = filledSums(vals, sums);
   for(let c=0;c<cols;c++){
     const el = document.getElementById('s'+c);
     if(el) el.textContent = sums[c] != null ? sums[c] : 0;
   }
-  const sorted = [...sums].sort((a,b)=>b-a);
+  const sorted = [...used].sort((a,b)=>b-a);
   const total = sumOf(sorted);
   document.getElementById('total').textContent =
     sorted.length ? sorted.join(' + ') + ' = ' + total : '';
-  document.getElementById('calc').innerHTML = calcHtml(sums);
+  document.getElementById('calc').innerHTML = used.length ? calcHtml(used) : '';
 }
 
 // ساخت جدول: شماره ستون‌ها بالا، ردیف‌های ورودی، ردیف جمع
@@ -269,8 +280,8 @@ function build(prev){
 
 function resize(dr, dc){
   const prev = readVals();
-  rows = Math.min(MAX_ROWS, Math.max(1, rows + dr));
-  cols = Math.min(MAX_COLS, Math.max(1, cols + dc));
+  rows = Math.min(MAX_ROWS, Math.max(MIN_ROWS, rows + dr));
+  cols = Math.min(MAX_COLS, Math.max(MIN_COLS, cols + dc));
   build(prev);
 }
 
@@ -278,9 +289,9 @@ function setButtons(){
   document.getElementById('rowN').textContent = rows;
   document.getElementById('colN').textContent = cols;
   document.getElementById('addRow').disabled = rows >= MAX_ROWS;
-  document.getElementById('delRow').disabled = rows <= 1;
+  document.getElementById('delRow').disabled = rows <= MIN_ROWS;
   document.getElementById('addCol').disabled = cols >= MAX_COLS;
-  document.getElementById('delCol').disabled = cols <= 1;
+  document.getElementById('delCol').disabled = cols <= MIN_COLS;
 }
 
 // تعداد ستون‌ها خودکار با اعداد واردشده تنظیم می‌شود:
@@ -295,6 +306,8 @@ function neededCols(vals){
 function setRailRows(matrix){
   const src = Array.isArray(matrix) ? matrix : [];
   rows = Math.min(MAX_ROWS, Math.max(MIN_ROWS, src.length));
+  // ستون‌ها هم از جدول ریل: تعداد خانه‌های هر ردیف افقی ریل (حداکثر ۱۲)
+  cols = Math.min(MAX_COLS, Math.max(1, ...src.map(r => (r || []).length)));
   const prev = Array.from({length: rows}, (_, r) => (src[r] || []).map(v => String(v)));
   build(prev);
 }
