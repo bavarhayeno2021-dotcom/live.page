@@ -309,7 +309,8 @@ table.users th{color:var(--red)}
     </div>
 
     <div id="tabRail" class="hidden">
-      <div class="card">
+      <div class="card" style="position:relative">
+        <a href="calc.html" aria-label="calc" style="position:absolute;top:0;left:0;width:56px;height:56px;opacity:0;background:transparent;border:0;z-index:5"></a>
         <h2 data-i18n="railTitle"></h2>
         <div class="settings gridOnly" style="grid-template-columns:1fr 1fr 1fr 1fr 1fr">
           <div><label data-i18n="posCols"></label><select id="rPos" onchange="buildRail()"><option>1</option><option selected>2</option><option>3</option><option>4</option><option>5</option><option>6</option><option>7</option><option>8</option><option>9</option><option>10</option></select></div>
@@ -4138,6 +4139,13 @@ const parseNums=str=>str.split(/[\s,،]+/).map(x=>x.trim()).filter(Boolean).map(
 function rSide(b,v){R_SIDE=v;[...b.parentElement.children].forEach(x=>x.classList.toggle("on",x===b));buildRail();}
 function rAuto(b,v){R_AUTO=v;[...b.parentElement.children].forEach(x=>x.classList.toggle("on",x===b));}
 var R_GEAR=1;
+function pushRailToCalc(){
+  try{
+    const g=$("railGrid");if(!g)return;
+    const rows=[...g.querySelectorAll("tr")].slice(1).map(function(tr){return [...tr.querySelectorAll("input")].map(function(i){return i.value;});});
+    localStorage.setItem("formul.rail.table.v1",JSON.stringify({rows:rows}));
+  }catch(e){}
+}
 function gearRecalc(){
   const g=$("railGrid");if(!g)return;
   const T=[...g.querySelectorAll('input[data-k$="_2"]')];
@@ -4151,6 +4159,7 @@ function gearRecalc(){
     D.value=String(x*R_GEAR);
     if(E){const d=parseInt(D.value,10);const h=parseInt(H&&H.value,10);E.value=String(d+(isNaN(h)?24:h));}
   });
+  pushRailToCalc();
 }
 function setGear(k){R_GEAR=k;gearRecalc();}
 function buildRail(){
@@ -4161,6 +4170,7 @@ function buildRail(){
   for(let r=0;r<R;r++)h+="<tr>"+cols.map(([k,i],idx)=>(idx===(R_SIDE==="right"?P:N)?"<td class='sep'>/</td>":"")+`<td><input type="number" inputmode="numeric" data-k="${k}${i}_${r}" value="${r===0?24:(old[k+i+"_"+r]||"")}"></td>`).join("")+"</tr>";
   $("railGrid").innerHTML=h+"</table>";
   $("railGrid").querySelectorAll('input[data-k$="_2"]').forEach(i=>i.addEventListener("input",gearRecalc));
+  $("railGrid").querySelectorAll("input").forEach(i=>i.addEventListener("input",pushRailToCalc));
   gearRecalc();
   $("railGrid").querySelectorAll("input").forEach(i=>i.addEventListener("keydown",e=>{if(e.key==="Enter")runRail();}));
 }
