@@ -3149,7 +3149,7 @@ const EntryAdditions473=(()=>{
  function sameLevel(times){return Array.isArray(times)&&times.length===2&&T.matches(times[0]%24,times[1])&&T.matches(times[1]%24,times[0]);}
  function sameColumn(t2,a){return Number.isInteger(t2)&&Number.isInteger(a)&&t2>=1&&t2<=24&&a>=1&&a<=24&&Math.abs(t2-a)===12;}
  function apply(base,p,clock){
-  if(p.entryAdditions!==true)return base;
+  if(p.entryAdditions===false)return base;
   const a=base.first,b=base.second,firstGreater=a-b===1,secondGreater=b-a===1,differenceOne=firstGreater||secondGreater;
   const basePlan={entry:base.entry,exit:base.exit,height:base.height,firstEnd:base.firstEnd,secondEnd:base.secondEnd,next:base.next};
   let entry=base.entry,height=base.height,exit=base.exit,secondEnd=base.secondEnd,halfCount=null,entryHalfHour=false,heightStartsAfterEntry=false,heightSource=base.heightSource;
