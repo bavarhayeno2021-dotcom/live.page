@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cell Equation</title>
+<style>
+  :root{--bg:#170c2b;--card:#241645;--line:#5a3fa0;--accent:#6d3fe0;--text:#eee6ff;--muted:#cbbcf0;--res:#ffd98a;--ok:#00e676;--ink:#4b2f8a;--bgtext:#130a28;}
+  *{box-sizing:border-box;}
+  html,body{margin:0;}
+  body{background:var(--bg);color:var(--text);font-family:system-ui,Tahoma,sans-serif;min-height:100vh;padding:52px 12px 16px;position:relative;overflow-x:hidden;}
+  .bg-wrap{position:fixed;inset:0;overflow:hidden;pointer-events:none;z-index:0;}
+  .bg-text{position:absolute;top:50%;margin-top:-0.6em;left:0;white-space:nowrap;font-family:system-ui,sans-serif;font-weight:800;font-size:12vw;line-height:1;color:var(--bgtext);filter:blur(1.5px);animation:bgmove 18s linear infinite;}
+  @keyframes bgmove{from{transform:translateX(-100%);} to{transform:translateX(100vw);}}
+  .wrap{position:relative;z-index:1;max-width:900px;margin:0 auto;}
+  h1{font-size:18px;margin:6px 0 10px;color:var(--muted);text-align:center;}
+  select{padding:6px 10px;background:var(--card);color:var(--text);border:1px solid var(--line);border-radius:8px;font-size:15px;font-family:inherit;}
+  .ctls{display:flex;justify-content:center;margin:8px 0;}
+  .ctl{display:flex;align-items:center;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--card);}
+  .ctl span{padding:0 8px;font-size:14px;color:var(--muted);}
+  .ctl button{background:var(--accent);color:#fff;border:0;padding:6px 12px;font-size:18px;line-height:1;}
+  .ctl button:disabled{opacity:.3;}
+  .ctl b{min-width:30px;text-align:center;font-size:15px;}
+  .signrow{display:flex;justify-content:center;align-items:center;gap:8px;margin:8px 0;font-size:15px;color:var(--muted);}
+  .err{color:var(--res);font-size:13px;min-height:1em;text-align:center;margin:6px 0;}
+  table.cells{width:100%;border-collapse:collapse;direction:ltr;table-layout:fixed;}
+  table.cells td{border:1px solid var(--line);padding:0;}
+  table.cells td.hdr{border:0;color:var(--muted);font-size:12px;text-align:center;padding:2px 0;}
+  table.cells input{width:100%;display:block;background:var(--card);color:var(--text);border:0;border-radius:0;padding:10px 0;font-size:17px;text-align:center;min-width:0;font-family:monospace;}
+  .total{direction:ltr;text-align:center;font-family:monospace;font-size:16px;margin:12px 0;padding:10px;border:1px solid var(--line);border-radius:12px;background:var(--card);word-break:break-word;}
+  .calc{direction:ltr;font-family:monospace;font-size:16px;margin-top:16px;padding:12px 4px;display:flex;flex-direction:column;align-items:center;gap:14px;}
+  .top{display:flex;justify-content:center;}
+  .pair{display:flex;justify-content:center;align-items:center;gap:40px;}
+  .side{display:flex;align-items:center;gap:8px;}
+  .stk{text-align:right;min-width:72px;}
+  .stk > div{padding:2px 0;}
+  .stk .ln{border-bottom:2px solid var(--text);padding-bottom:4px;margin-bottom:4px;}
+  .stk .res{color:var(--res);font-weight:bold;}
+  .mid{border:2px solid var(--ok);border-radius:8px;padding:8px 12px;font-size:18px;font-weight:bold;color:var(--ok);}
+  .badge{background:var(--accent);color:#fff;border-radius:6px;padding:2px 7px;font-size:14px;}
+  .multrow{direction:ltr;text-align:center;margin:12px 0;color:var(--muted);}
+  .multrow input{padding:8px;width:90px;background:var(--card);color:var(--text);border:1px solid var(--line);border-radius:8px;text-align:center;font-size:16px;}
+  #ext{direction:ltr;text-align:center;font-family:monospace;font-size:16px;line-height:2.1;}
+  .menu-wrap{position:fixed;top:8px;right:8px;z-index:20;}
+  #menuBtn{background:var(--accent);color:#fff;border:0;border-radius:10px;padding:6px 12px;font-size:18px;line-height:1;}
+  .menu{margin-top:6px;background:var(--card);border:1px solid var(--line);border-radius:10px;display:flex;flex-direction:column;overflow:hidden;min-width:230px;}
+  .mset{display:flex;flex-direction:column;gap:8px;padding:10px 12px;border-top:1px solid var(--line);}
+  .mset label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--muted);}
+  .mset select{width:100%;}
+  .menu button{background:none;color:var(--text);border:0;padding:10px 12px;text-align:start;font-size:15px;font-family:inherit;}
+  .menu button:hover{background:var(--line);}
+  .modal{position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;z-index:30;padding:12px;}
+  .win{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;width:100%;max-width:340px;position:relative;color:var(--text);}
+  .win h2{font-size:18px;margin:4px 0 12px;}
+  .win label{display:block;margin:8px 0;font-size:14px;}
+  .win label input{display:block;width:100%;margin-top:4px;background:var(--bg);color:var(--text);border:1px solid var(--line);border-radius:8px;padding:8px;font-size:15px;direction:ltr;}
+  .win button[type=submit]{width:100%;background:var(--accent);color:#fff;border:0;border-radius:10px;padding:10px;font-size:15px;margin-top:8px;}
+  .win .close{position:absolute;top:8px;inset-inline-start:8px;background:none;color:var(--text);border:0;font-size:20px;}
+  .msg{font-size:13px;margin:8px 0 0;color:var(--res);min-height:1em;}
+  .msg.err{color:#ff8a80;}
+  .split{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin:8px 0;}
+  .split > *{margin:4px 0;}
+  .social{margin:64px 0 24px;display:flex;flex-direction:column;align-items:center;gap:12px;direction:ltr;}
+  .social .row{display:flex;gap:28px;justify-content:center;flex-wrap:wrap;}
+  .social a{display:flex;align-items:center;gap:8px;color:var(--muted);text-decoration:none;font-size:14px;}
+  .social a:not([href]){opacity:.5;cursor:default;}
+  .social img{width:30px;height:30px;border-radius:6px;}
+  [hidden]{display:none !important;}
+</style>
+</head>
+<body>
+<div class="bg-wrap" aria-hidden="true"><span class="bg-text" id="bgName">thepilottmnl001</span></div>
+
+<div class="menu-wrap">
+  <button id="menuBtn" type="button" aria-label="menu">☰</button>
+  <div class="menu" id="menu" hidden>
+    <button type="button" data-open="signup" data-i18n="signup"></button>
+    <button type="button" data-open="signin" data-i18n="signin"></button>
+    <div class="mset">
+      <label><span data-i18n="themeLbl"></span>
+        <select id="themeSel">
+          <option value="purple">بنفش آمتیست / Amethyst Purple / Ametist Mor / بنفسجي أميثيست</option>
+          <option value="petrol">آبی نفتی / Petrol Blue / Petrol Mavisi / أزرق نفطي</option>
+          <option value="burgundy">زرشکی گارنت / Garnet Burgundy / Garnet Bordo / عقيقي غارنت</option>
+          <option value="navy">سرمه‌ای نیمه‌شب / Midnight Navy / Gece Lacivert / كحلي منتصف الليل</option>
+          <option value="olive">زیتونی طلایی / Golden Olive / Altın Zeytin / زيتوني ذهبي</option>
+          <option value="copper">شکلاتی مسی / Copper Chocolate / Bakır Çikolata / شوكولاتة نحاسية</option>
+          <option value="jade">یشمی / Jade / Yeşim / يشمي</option>
+          <option value="cream">کرمی / Cream / Krem / كريمي</option>
+        </select>
+      </label>
+      <label><span data-i18n="langLbl"></span>
+        <select id="langSel">
+          <option value="fa">فارسی</option>
+          <option value="en">English</option>
+          <option value="tr">Türkçe (İstanbul)</option>
+          <option value="ar">العربية</option>
+        </select>
+      </label>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="modal" hidden>
+  <div class="win">
+    <button class="close" id="closeBtn" type="button" data-i18n-aria="close">×</button>
+    <form id="signupForm" hidden>
+      <h2 data-i18n="signup"></h2>
+      <label><span data-i18n="username"></span><input name="nick" autocomplete="username"></label>
+      <label><span data-i18n="email"></span><input name="email" type="email" autocomplete="email"></label>
+      <label><span data-i18n="password"></span><input name="pass" type="password" autocomplete="new-password"></label>
+      <label><span data-i18n="repeatPassword"></span><input name="pass2" type="password" autocomplete="new-password"></label>
+      <label><span id="capQ"></span><input name="cap" inputmode="numeric"></label>
+      <button type="submit" data-i18n="register"></button>
+      <p class="msg" id="signupMsg"></p>
+    </form>
+    <form id="signinForm" hidden>
+      <h2 data-i18n="signin"></h2>
+      <label><span data-i18n="email"></span><input name="email" type="email" autocomplete="email"></label>
+      <label><span data-i18n="password"></span><input name="pass" type="password" autocomplete="current-password"></label>
+      <button type="submit" data-i18n="login"></button>
+      <p class="msg" id="signinMsg"></p>
+    </form>
+  </div>
+</div>
+
+<div class="wrap">
+  <h1 data-i18n="title"></h1>
+  <div class="split">
+  <div class="ctls"><div class="ctl"><span data-i18n="cellCount"></span><button id="delCell" type="button">−</button><b id="cellN">5</b><button id="addCell" type="button">+</button></div></div>
+  <div class="signrow"><span data-i18n="cellSign"></span>
+    <select id="cellSgn"><option value="+">+</option><option value="-">−</option></select>
+  </div>
+  </div>
+  <table class="cells" id="grid"></table>
+  <div class="err" id="err"></div>
+  <div class="total" id="total"></div>
+  <div class="calc" id="calc"></div>
+
+  <div class="split">
+  <div class="signrow"><span data-i18n="step"></span>
+    <select id="sgn"><option value="-">−</option><option value="+">+</option></select>
+  </div>
+  <div class="multrow"><span data-i18n="mult"></span> <input id="mult" inputmode="numeric"></div>
+  </div>
+  <div id="ext"></div>
+  <footer class="social">
+    <div class="row">
+      <a id="lnkBlog" target="_blank" rel="noopener"><span>F.O.R.M.U.L <span data-i18n="blog"></span></span><img src="data:image/png;base64,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" alt=""></a>
+      <a id="lnkTelegram" target="_blank" rel="noopener"><span>F.O.R.M.U.L <span data-i18n="telegram"></span></span><img src="data:image/png;base64,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" alt=""></a>
+    </div>
+    <div class="row">
+      <a id="lnkRubika" target="_blank" rel="noopener"><span>@MgTTRD0123 <span data-i18n="rubika"></span></span><img src="data:image/png;base64,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" alt=""></a>
+    </div>
+  </footer>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script>
+// ---------- زبان‌ها ----------
+// لینک‌های فوتر: آدرس کامل را اینجا بگذارید
+const SOCIAL = { blog: 'https://theformul.blogfa.com/post/2', telegram: 'https://t.me/TheFormula0123', rubika: 'https://rubika.ir/MgTTRD0123' };
+const I18N = {
+  fa: {
+    title:'معادلهٔ خانه‌ها', signup:'sign up', signin:'sign in', login:'ورود', register:'ثبت نام', close:'بستن',
+    username:'یوزر نیم', email:'ایمیل', password:'پسورد', repeatPassword:'تکرار پسورد',
+    themeLbl:'تم رنگ زمینه', langLbl:'زبان',
+    checkEmail:'ایمیل تأیید را بررسی کنید.', signedIn:'با موفقیت وارد شدید.', signupFail:'ثبت‌نام انجام نشد. شاید یوزرنیم یا ایمیل تکراری باشد.', loginFail:'ایمیل یا پسورد اشتباه است.',
+    blog:'وبلاگ', telegram:'تلگرام', rubika:'روبیکا',
+    cellCount:'تعداد خانه‌ها', cellSign:'علامت خانه‌ها', step:'علامت مرحلهٔ ۱', mult:'عدد ضرب (×)',
+    height:'ارتفاع', candles:'تعداد کندل', waiting:'معطل شده',
+    errCells:'همهٔ خانه‌ها را با عدد صحیح پر کنید (عدد منفی را با علامت − بزنید).',
+    errMult:'عدد ضرب باید عدد صحیح و غیرمنفی باشد.',
+    capQ:'حاصل {a} + {b} را وارد کنید:',
+    errNick:'یوزر نیم را وارد کنید.', errEmail:'ایمیل درست نیست.', errPass:'پسورد باید حداقل ۶ کاراکتر باشد.',
+    errPass2:'تکرار پسورد با پسورد یکی نیست.', errCap:'کپچا درست نیست.',
+    okSignup:'فرم درست است. ثبت‌نام روی سرور هنوز انجام نشده است.', noSignin:'ورود هنوز به سرور وصل نیست.'
+  },
+  en: {
+    title:'Cell Equation', signup:'Sign up', signin:'Sign in', login:'Log in', register:'Register', close:'Close',
+    username:'Username', email:'Email', password:'Password', repeatPassword:'Repeat password',
+    themeLbl:'Background theme', langLbl:'Language',
+    checkEmail:'Check your email to confirm your account.', signedIn:'Signed in successfully.', signupFail:'Sign-up failed. The username or email may already be taken.', loginFail:'Wrong email or password.',
+    blog:'Blog', telegram:'Telegram', rubika:'Rubika',
+    cellCount:'Cells', cellSign:'Cells sign', step:'Step 1 sign', mult:'Multiplier (×)',
+    height:'Height', candles:'Candles', waiting:'Waiting',
+    errCells:'Fill all cells with whole numbers (use the − sign for negatives).',
+    errMult:'Multiplier must be a non-negative whole number.',
+    capQ:'Enter the sum of {a} + {b}:',
+    errNick:'Enter a username.', errEmail:'Invalid email.', errPass:'Password must be at least 6 characters.',
+    errPass2:'Passwords do not match.', errCap:'Wrong captcha answer.',
+    okSignup:'Form is valid. Server registration is not connected yet.', noSignin:'Login is not connected to the server yet.'
+  },
+  tr: {
+    title:'Hücre Denklemi', signup:'Kayıt ol', signin:'Giriş yap', login:'Giriş', register:'Kaydol', close:'Kapat',
+    username:'Kullanıcı adı', email:'E-posta', password:'Şifre', repeatPassword:'Şifre tekrar',
+    themeLbl:'Arka plan teması', langLbl:'Dil',
+    checkEmail:'Hesabınızı onaylamak için e-postanızı kontrol edin.', signedIn:'Giriş başarılı.', signupFail:'Kayıt başarısız. Kullanıcı adı veya e-posta zaten kullanılıyor olabilir.', loginFail:'E-posta veya şifre yanlış.',
+    blog:'Blog', telegram:'Telegram', rubika:'Rubika',
+    cellCount:'Hücre sayısı', cellSign:'Hücre işareti', step:'Adım 1 işareti', mult:'Çarpan (×)',
+    height:'Yükseklik', candles:'Mum sayısı', waiting:'Bekleme',
+    errCells:'Tüm hücrelere tam sayı girin (negatif için − işaretini seçin).',
+    errMult:'Çarpan negatif olmayan tam sayı olmalı.',
+    capQ:'{a} + {b} toplamını girin:',
+    errNick:'Kullanıcı adı girin.', errEmail:'Geçersiz e-posta.', errPass:'Şifre en az 6 karakter olmalı.',
+    errPass2:'Şifreler eşleşmiyor.', errCap:'Doğrulama cevabı yanlış.',
+    okSignup:'Form geçerli. Sunucu kaydı henüz bağlı değil.', noSignin:'Giriş henüz sunucuya bağlı değil.'
+  },
+  ar: {
+    title:'معادلة الخانات', signup:'إنشاء حساب', signin:'تسجيل الدخول', login:'دخول', register:'تسجيل', close:'إغلاق',
+    username:'اسم المستخدم', email:'البريد الإلكتروني', password:'كلمة المرور', repeatPassword:'تكرار كلمة المرور',
+    themeLbl:'سمة الخلفية', langLbl:'اللغة',
+    checkEmail:'تحقق من بريدك الإلكتروني لتأكيد الحساب.', signedIn:'تم تسجيل الدخول بنجاح.', signupFail:'فشل التسجيل. ربما اسم المستخدم أو البريد مستخدم مسبقاً.', loginFail:'البريد الإلكتروني أو كلمة المرور غير صحيحة.',
+    blog:'المدونة', telegram:'تيليغرام', rubika:'روبيكا',
+    cellCount:'عدد الخانات', cellSign:'إشارة الخانات', step:'إشارة المرحلة ١', mult:'المضاعف (×)',
+    height:'الارتفاع', candles:'عدد الشموع', waiting:'المعلّق',
+    errCells:'املأ جميع الخانات بأعداد صحيحة (استخدم إشارة − للأعداد السالبة).',
+    errMult:'يجب أن يكون المضاعف عددًا صحيحًا غير سالب.',
+    capQ:'أدخل ناتج {a} + {b}:',
+    errNick:'أدخل اسم المستخدم.', errEmail:'البريد الإلكتروني غير صحيح.', errPass:'يجب أن تكون كلمة المرور 6 أحرف على الأقل.',
+    errPass2:'كلمتا المرور غير متطابقتين.', errCap:'إجابة التحقق غير صحيحة.',
+    okSignup:'النموذج صحيح. التسجيل على الخادم غير متصل بعد.', noSignin:'تسجيل الدخول غير متصل بالخادم بعد.'
+  }
+};
+let LANG = 'fa';
+const T = (k, vars) => {
+  let s = (I18N[LANG] && I18N[LANG][k]) || I18N.fa[k] || k;
+  if (vars) for (const x in vars) s = s.replace('{' + x + '}', vars[x]);
+  return s;
+};
+
+// ---------- تم‌ها (رنگ‌ها) ----------
+const THEMES = {
+  purple: {bg:'#1a0d26', card:'#2e1439', line:'#6e2f7f', accent:'#511f89', text:'#f6ede8', muted:'#e2dbe3', res:'#e2c8b7', ok:'#c9a8ff', ink:'#6e2f7f', bgtext:'#13091b'},
+  petrol: {bg:'#0d2326', card:'#143639', line:'#2f7f7f', accent:'#1f7889', text:'#eff1e4', muted:'#d0e7df', res:'#ddd4ad', ok:'#7fe8d6', ink:'#2f7f7f', bgtext:'#09191b'},
+  burgundy: {bg:'#260d18', card:'#391421', line:'#7f2f3a', accent:'#891f41', text:'#fbece5', muted:'#e9dedc', res:'#e7c8b3', ok:'#ffb3c6', ink:'#7f2f3a', bgtext:'#1b0911'},
+  navy: {bg:'#0d1726', card:'#142339', line:'#2f577f', accent:'#1f4d89', text:'#f0f1eb', muted:'#cfe0e8', res:'#dcccb2', ok:'#8fe3c0', ink:'#2f577f', bgtext:'#09111b'},
+  olive: {bg:'#363e29', card:'#535e3e', line:'#60664c', accent:'#7d8f3a', text:'#f3f0df', muted:'#dce4cf', res:'#ddd4a9', ok:'#b8f08a', ink:'#60664c', bgtext:'#272d1e'},
+  copper: {bg:'#26150d', card:'#392014', line:'#7f4e2f', accent:'#894a1f', text:'#f9ede1', muted:'#e5dfd3', res:'#e5c9a4', ok:'#ffd27a', ink:'#7f4e2f', bgtext:'#1b0f09'},
+  jade: {bg:'#0d2622', card:'#143a33', line:'#2e7d6b', accent:'#1f8a70', text:'#e8fff8', muted:'#a8e0cf', res:'#ffe7a3', ok:'#7fffd4', ink:'#2e7d6b', bgtext:'#0a1f1c'},
+  cream: {bg:'#f5ecd9', card:'#fff8e8', line:'#c9b38a', accent:'#8c6a3f', text:'#3b2f1e', muted:'#6b5a40', res:'#8a4b00', ok:'#2e7d32', ink:'#c9b38a', bgtext:'#e6d8b8'}
+};
+let THEME = 'purple';
+function applyTheme(name){
+  THEME = THEMES[name] ? name : 'purple';
+  const st = document.documentElement.style;
+  for (const k in THEMES[THEME]) st.setProperty('--' + k, THEMES[THEME][k]);
+}
+
+// ---------- محاسبه ----------
+const gridEl = document.getElementById('grid');
+let N = 5;
+const MIN_CELLS = 2, MAX_CELLS = 12;
+const sumOf = a => a.reduce((x,y)=>x+y,0);
+const digitSum = n => String(Math.abs(n)).split('').reduce((a,b)=>a+Number(b),0);
+// بنفش: باقیماندهٔ ۱۱ (مضرب ۱۱ = ۱۱)، قدر مطلق
+const purpleLeft = n => { const a = Math.abs(n); if (a === 0) return 0; const r = a % 11; return r === 0 ? 11 : r; };
+
+function toNum(s){
+  const t = String(s||'').replace(/[\u06F0-\u06F9]/g, d => String(d.charCodeAt(0)-0x06F0)).trim();
+  const n = parseFloat(t);
+  return Number.isFinite(n) ? n : NaN;
+}
+function readVals(){
+  const sgn = document.getElementById('cellSgn');
+  const neg = !!sgn && sgn.value === '-';
+  return Array.from({length:N}, (_,c) => {
+    const el = gridEl.querySelector('input[data-c="'+c+'"]');
+    const raw = el ? el.value : '';
+    const n = toNum(raw);
+    const signed = Number.isNaN(n) ? NaN : (neg ? -Math.abs(n) : Math.abs(n));
+    return { raw: raw, n: n, signed: signed };
+  });
+}
+function signedExpr(arr){
+  return arr.map((v,i) => i===0 ? String(v) : (v < 0 ? ' − ' : ' + ') + Math.abs(v)).join('');
+}
+function opSign(){ const el = document.getElementById('sgn'); return (el && el.value === '+') ? 1 : -1; }
+function stk(parts, res){
+  const body = parts.map((p,i)=>'<div'+(i===parts.length-1?' class="ln"':'')+'>'+p+'</div>').join('');
+  return '<div class="stk">'+body+'<div class="res">'+res+'</div></div>';
+}
+function calcHtml(sums){
+  const sorted = [...sums].sort((a,b)=>b-a);
+  const total = sumOf(sorted);
+  const small = Math.min(...sums.map(v => Math.abs(v)));
+  const sg = total < 0 ? -1 : 1;           // اگر کل منفی باشد همه چیز منفی است
+  const sd = x => sg * digitSum(x);
+  const sp = x => sg * purpleLeft(x);
+  const diff = total + opSign() * small;
+  const dsT = sd(total), dsD = sd(diff);
+  const sum2 = total + diff;
+  const chain = dsT + dsD;
+  const pl = sp(sum2);
+  const l1 = sd(sum2), l2 = sd(l1);
+  // خروجی تک‌رقمی فقط یک بار و بدون پسوند نوشته می‌شود
+  const sup = '<sup class="badge" style="font-size:11px;padding:0 4px;margin-left:3px">'+sp(chain)+'</sup>';
+  const lastRow = Math.abs(l1) < 10
+    ? '<div class="res">'+l1+'</div>'
+    : '<div class="res ln">'+l1+sup+'</div><div class="res">'+l2+'</div>';
+  const left = '<div class="side"><span class="badge">'+pl+'</span><div class="stk"><div>'+total+'</div><div>'+diff+'</div><div class="ln">'+sum2+'</div>'+lastRow+'</div></div>';
+  const mid = '<div class="mid">'+(sg * digitSum(small))+'</div>';
+  const right = '<div class="side">'+stk([dsT, dsD, chain], sd(chain))+'</div>';
+  return '<div class="top">'+mid+'</div><div class="pair">'+left+right+'</div>';
+}
+function extraHtml(nums, M){
+  const total = sumOf(nums), small = Math.min(...nums.map(v => Math.abs(v))), diff = total + opSign() * small;
+  const sg = total < 0 ? -1 : 1;
+  const sum2 = total + diff;
+  const pl = sg * purpleLeft(sum2);
+  const chainAbs = digitSum(total) + digitSum(diff);
+  // اگر خروجی ستون چپ تک‌رقمی باشد پسوند وجود ندارد
+  const suffix = digitSum(sum2) < 10 ? 0 : sg * purpleLeft(chainAbs);
+  const L = pl + suffix, H = L * M, dH = sg * digitSum(H);
+  const C = sg * (digitSum(L) + M), W = C - dH;
+  const negNum = x => x < 0 ? '(' + x + ')' : String(x);
+  const wrapD = list => (sg < 0 ? '-(' : '') + list.join('+') + (sg < 0 ? ')' : '');
+  const digitsH = String(Math.abs(H)).split('');
+  const digitsL = String(Math.abs(L)).split('').concat([String(M)]);
+  return '<div>' + L + ' × ' + M + ' = ' + H + ' &nbsp; ' + T('height') + '</div>' +
+         '<div>' + wrapD(digitsH) + ' = ' + dH + '</div>' +
+         '<div>' + wrapD(digitsL) + ' = ' + C + ' &nbsp; ' + T('candles') + '</div>' +
+         '<div>' + C + ' − ' + negNum(dH) + ' = ' + W + ' &nbsp; ' + T('waiting') + '</div>';
+}
+function updateExt(nums){
+  const box = document.getElementById('ext');
+  const raw = document.getElementById('mult').value.trim();
+  if (raw === '') { box.innerHTML = ''; return; }
+  const M = Number(raw);
+  if (!Number.isInteger(M) || M < 0) { box.innerHTML = '<div style="color:var(--res)">'+T('errMult')+'</div>'; return; }
+  box.innerHTML = extraHtml(nums, M);
+}
+function update(){
+  const vals = readVals();
+  const nums = vals.map(v => v.signed);
+  const err = document.getElementById('err');
+  if (vals.some(v => Number.isNaN(v.n) || Math.floor(v.n) !== v.n)){
+    err.textContent = T('errCells');
+    document.getElementById('total').textContent = '';
+    document.getElementById('calc').innerHTML = '';
+    document.getElementById('ext').innerHTML = '';
+    return;
+  }
+  err.textContent = '';
+  const sorted = [...nums].sort((a,b)=>b-a);
+  document.getElementById('total').textContent = signedExpr(sorted) + ' = ' + sumOf(sorted);
+  document.getElementById('calc').innerHTML = calcHtml(nums);
+  updateExt(nums);
+}
+function build(prev){
+  let h = '<tr>';
+  for (let c=0;c<N;c++) h += '<td class="hdr">'+(c+1)+'</td>';
+  h += '</tr><tr>';
+  for (let c=0;c<N;c++){
+    const v = (prev && prev[c] != null) ? prev[c] : '';
+    h += '<td><input inputmode="numeric" value="'+v+'" data-c="'+c+'"></td>';
+  }
+  h += '</tr>';
+  gridEl.innerHTML = h;
+  document.getElementById('cellN').textContent = N;
+  document.getElementById('addCell').disabled = N >= MAX_CELLS;
+  document.getElementById('delCell').disabled = N <= MIN_CELLS;
+  update();
+}
+function resizeCells(dd){
+  const prev = readVals().map(v => v.raw);
+  N = Math.min(MAX_CELLS, Math.max(MIN_CELLS, N + dd));
+  build(prev);
+}
+gridEl.addEventListener('input', update);
+gridEl.addEventListener('change', update);
+document.getElementById('mult').addEventListener('input', update);
+document.getElementById('sgn').addEventListener('change', update);
+document.getElementById('cellSgn').addEventListener('change', update);
+document.getElementById('addCell').onclick = () => resizeCells(1);
+document.getElementById('delCell').onclick = () => resizeCells(-1);
+
+// ---------- منو و فرم‌ها (به سرور وصل نیست) ----------
+let capA = 0, capB = 0, capAns = 0;
+function newCaptcha(){
+  capA = 1 + Math.floor(Math.random()*9);
+  capB = 1 + Math.floor(Math.random()*9);
+  capAns = capA + capB;
+  renderCap();
+}
+function renderCap(){
+  document.getElementById('capQ').textContent = T('capQ', {a: capA, b: capB});
+}
+const menu = document.getElementById('menu');
+const modal = document.getElementById('modal');
+const signupForm = document.getElementById('signupForm');
+const signinForm = document.getElementById('signinForm');
+function openForm(which){
+  menu.hidden = true;
+  modal.hidden = false;
+  signupForm.hidden = which !== 'signup';
+  signinForm.hidden = which !== 'signin';
+  signupForm.reset(); signinForm.reset();
+  document.getElementById('signupMsg').textContent = '';
+  document.getElementById('signinMsg').textContent = '';
+  newCaptcha();
+}
+document.getElementById('menuBtn').onclick = () => { menu.hidden = !menu.hidden; };
+menu.querySelectorAll('button').forEach(b => b.onclick = () => openForm(b.dataset.open));
+document.getElementById('closeBtn').onclick = () => { modal.hidden = true; };
+modal.addEventListener('click', e => { if (e.target === modal) modal.hidden = true; });
+
+const SB_URL = 'https://jwzolxpyfxtnrcvnrwds.supabase.co';
+const SB_KEY = 'sb_publishable_Ji8dEtvZ7LWz7zKNzI0fgA_hjnAjgNz';
+const sb = window.supabase.createClient(SB_URL, SB_KEY);
+const BG_DEFAULT = 'thepilottmnl001';
+function setBgName(n){ document.getElementById('bgName').textContent = n || BG_DEFAULT; }
+async function loadUsername(user){
+  if (!user){ setBgName(''); return; }
+  const { data } = await sb.from('profiles').select('username').eq('id', user.id).maybeSingle();
+  setBgName(data && data.username);
+}
+sb.auth.onAuthStateChange((_ev, session) => { loadUsername(session && session.user); });
+
+signupForm.onsubmit = async e => {
+  e.preventDefault();
+  const f = e.target;
+  const fld = n => f.querySelector('[name="'+n+'"]');
+  const msg = document.getElementById('signupMsg');
+  const nick = fld('nick').value.trim();
+  const email = fld('email').value.trim();
+  const p1 = fld('pass').value, p2 = fld('pass2').value;
+  let err = '';
+  if (nick.length < 3 || nick.length > 30) err = T('errNick');
+  else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) err = T('errEmail');
+  else if (p1.length < 6) err = T('errPass');
+  else if (p1 !== p2) err = T('errPass2');
+  else if (toNum(fld('cap').value) !== capAns) err = T('errCap');
+  if (err){
+    msg.className = 'msg err';
+    msg.textContent = err;
+    newCaptcha();
+    return;
+  }
+  const { data, error } = await sb.auth.signUp({ email: email, password: p1, options: { data: { username: nick } } });
+  if (error){
+    msg.className = 'msg err';
+    msg.textContent = T('signupFail');
+    newCaptcha();
+    return;
+  }
+  msg.className = 'msg';
+  msg.textContent = data.session ? T('signedIn') : T('checkEmail');
+  if (data.session) modal.hidden = true;
+};
+signinForm.onsubmit = async e => {
+  e.preventDefault();
+  const f = e.target;
+  const fld = n => f.querySelector('[name="'+n+'"]');
+  const msg = document.getElementById('signinMsg');
+  const { error } = await sb.auth.signInWithPassword({ email: fld('email').value.trim(), password: fld('pass').value });
+  if (error){
+    msg.className = 'msg err';
+    msg.textContent = T('loginFail');
+    return;
+  }
+  msg.className = 'msg';
+  msg.textContent = T('signedIn');
+  modal.hidden = true;
+};
+
+// ---------- اجرا ----------
+function applyLang(){
+  document.documentElement.lang = LANG;
+  document.documentElement.dir = (LANG === 'fa' || LANG === 'ar') ? 'rtl' : 'ltr';
+  document.querySelectorAll('[data-i18n]').forEach(el => { el.textContent = T(el.dataset.i18n); });
+  document.getElementById('closeBtn').setAttribute('aria-label', T('close'));
+  document.getElementById('signupMsg').textContent = '';
+  document.getElementById('signinMsg').textContent = '';
+  renderCap();
+  update();
+}
+document.getElementById('langSel').addEventListener('change', e => { LANG = e.target.value; applyLang(); });
+document.getElementById('themeSel').addEventListener('change', e => applyTheme(e.target.value));
+['blog','telegram','rubika'].forEach(k => { const a = document.getElementById('lnk'+k[0].toUpperCase()+k.slice(1)); if (SOCIAL[k]) a.href = SOCIAL[k]; });
+document.getElementById('langSel').value = LANG;
+document.getElementById('themeSel').value = THEME;
+applyTheme(THEME);
+applyLang();
+build(null);
+</script>
+</body>
+</html>
