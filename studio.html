@@ -168,7 +168,7 @@ function renderPosCols(){
   TOP_ROWS.forEach(function(g,j){
     addRow(g.h,function(td,p){
       var c=state.top[p][j];
-      var v=document.createElement('div');v.textContent=c.t||'—';td.append(v);
+      if(j===1){var inp=document.createElement('input');inp.type='text';inp.style.width='80px';inp.value=c.t||'';inp.onchange=function(){c.t=inp.value;c.a=false;persistAll();renderPosCols();};td.append(inp);}else{var v=document.createElement('div');v.textContent=c.t||'—';td.append(v);}
       td.append(checkLbl(c));
     });
   });
