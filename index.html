@@ -3146,6 +3146,7 @@ if(typeof module!=='undefined')module.exports=EquationNumbers473;
 // Law 87 (locked): every count is exactly N candles; the entry candle is always height 1.
 const EntryAdditions473=(()=>{
  const T=typeof Time473!=='undefined'?Time473:require('./time.js');
+ const SUM_RULE_473=false;
  function sameLevel(times){return Array.isArray(times)&&times.length===2&&T.matches(times[0]%24,times[1])&&T.matches(times[1]%24,times[0]);}
  function sameColumn(t2,a){return Number.isInteger(t2)&&Number.isInteger(a)&&t2>=1&&t2<=24&&a>=1&&a<=24&&Math.abs(t2-a)===12;}
  function apply(base,p,clock){
@@ -3155,24 +3156,24 @@ const EntryAdditions473=(()=>{
   let entry=base.entry,height=base.height,exit=base.exit,secondEnd=base.secondEnd,halfCount=null,entryHalfHour=false,heightStartsAfterEntry=false,heightSource=base.heightSource;
   if(sameLevel(p.t)){
    entry=clock.adv(base.t2.at,1);height=a;exit=clock.adv(entry,a-1);
-   if(exit!==base.firstEnd)throw Error('تایم هم‌سطح: خروج باید پایان مرحلهٔ اول باشد.');
+   if(exit!==base.firstEnd)return base;
    return {...base,entry,height,exit,secondEnd:null,next:clock.adv(exit,1),entryAdditions:true,basePlan,differenceEntry:false,differenceKind:null,halfCount:null,entryHalfHour:false,heightStartsAfterEntry:false,sameLevelTimes:true,timeLeg:null,heightSource:'تعداد کندل‌های مرحلهٔ اول (تایم هم‌سطح)'};
   }
   if(sameColumn(base.t2&&base.t2.value,a)){
    entry=clock.adv(base.t2.at,1);height=a;exit=clock.adv(entry,a-1);
-   if(exit!==base.firstEnd)throw Error('تایم دوم هم‌ستون کندل اول: خروج باید پایان مرحلهٔ اول باشد.');
+   if(exit!==base.firstEnd)return base;
    return {...base,entry,height,exit,secondEnd:null,next:clock.adv(exit,1),entryAdditions:true,basePlan,differenceEntry:false,differenceKind:null,halfCount:null,entryHalfHour:false,heightStartsAfterEntry:false,sameLevelTimes:true,sameColumnTimes:true,timeLeg:null,heightSource:'تعداد کندل‌های مرحلهٔ اول (تایم دوم هم‌ستون کندل اول)'};
   }
   // مدل جمع‌ها (اختلاف ۱ بین جمع تایم‌ها و جمع کندل‌ها): |(تایم۱+تایم۲) − (کندل۱+کندل۲)| = ۱
   // ورود = یک کندل بعد از تایم ۲ ؛ پایان = آخرین کندل کندل ۲ ؛ ارتفاع جداست (تعداد کندل = جمع کندل‌ها)
   const tSum473=(base.t1&&base.t2)?(Number(base.t1.value)+Number(base.t2.value)):NaN,cSum473=a+b;
-  if(Number.isFinite(tSum473)&&Number.isFinite(cSum473)&&Math.abs(tSum473-cSum473)===1){
+  if(SUM_RULE_473&&Number.isFinite(tSum473)&&Number.isFinite(cSum473)&&Math.abs(tSum473-cSum473)===1){
    entry=clock.adv(base.t2.at,1);exit=base.secondEnd;
    return {...base,entry,height,exit,secondEnd:exit,next:clock.adv(exit,1),entryAdditions:true,basePlan,differenceEntry:false,differenceKind:'sum-one-difference',equalCandles:false,halfCount:null,entryHalfHour:false,heightStartsAfterEntry:false,sameLevelTimes:false,timeLeg:null,heightSource:base.heightSource,sumOneDiff:{tSum:tSum473,cSum:cSum473,candleCount:cSum473}};
   }
   if(a===b){
    entry=clock.adv(base.firstEnd,1);height=b;exit=clock.adv(entry,b-1);
-   if(exit!==base.secondEnd)throw Error('کندل ۱ و ۲ هم‌سطح: خروج باید آخرین کندل مرحلهٔ دوم باشد.');
+   if(exit!==base.secondEnd)return base;
    return {...base,entry,height,exit,secondEnd:exit,next:clock.adv(exit,1),entryAdditions:true,basePlan,differenceEntry:false,differenceKind:'equal-candles',equalCandles:true,halfCount:null,entryHalfHour:false,heightStartsAfterEntry:false,sameLevelTimes:false,timeLeg:null,heightSource:'تعداد کندل‌های مرحلهٔ دوم (کندل ۱ و ۲ هم‌سطح) — از خود کندل ورود'};
   }
   if(firstGreater){
@@ -3182,7 +3183,7 @@ const EntryAdditions473=(()=>{
    heightSource='ارتفاع پایه — از خود کندل ورود';
   }else if(secondGreater){
    entry=clock.adv(base.firstEnd,1);height=b;exit=clock.adv(entry,b-1);secondEnd=exit;
-   if(exit!==base.secondEnd)throw Error('شاخهٔ اختلاف یک (دومی بزرگ‌تر): خروج باید پایان مرحلهٔ دوم باشد.');
+   if(exit!==base.secondEnd)return base;
    heightSource='تعداد کندل‌های مرحلهٔ دوم';
   }
   const timeLeg=null;
@@ -4585,8 +4586,6 @@ function markAxisGroups(NM){NM=NM||{};const all=[...document.querySelectorAll(".
   window.__AXISGROUPS=groups;const host=document.getElementById("axisGroupsBox");if(host)host.innerHTML=groups.length?groups.map(g=>`⚖️ <b>${g.v}</b> = ${g.names.join(" ، ")}`).join("<br>"):"— هیچ دو معادله‌ای جمع تعادل مساوی ندارند";}
 /* L63 — 🚀 زنجیرهٔ پوزیشن‌ها (اندیکاتور دستی): تایم‌ها → کندل‌ها → ثبت قیمت → اعداد معادلهٔ ± → هدف ؛ پایان کندل‌ها = شروع بعدی */
 const POS_PRICES=JSON.parse(localStorage.getItem("fl_posPrices")||"{}");
-// یک‌بار: قانون جمع‌ها باید روشن باشد؛ تیک قدیمی ذخیره‌شده (خاموش) را اصلاح می‌کند
-if(localStorage.getItem("fl_entryAdd_rev")!=="2"){POS_PRICES.entryAdditions473=true;localStorage.setItem("fl_posPrices",JSON.stringify(POS_PRICES));localStorage.setItem("fl_entryAdd_rev","2");}
 /* L88: جهت — پوزیشن ۱ از معادله ۲ ریل (منفی → صعودی) ؛ بعد یکی‌درمیان برعکس ؛ فقط بلوک ⑥/± می‌تواند جهت قبلی را تکرار کند */
 function applyDir(ch){ch.forEach(p=>{p.neg=!!p.neg;});}
 /* L96 (۲۰ سپتامبر): ورودی دستی تایم‌ها/کندل‌ها برای هر پوزیشن — در حافظه (localStorage) ذخیره می‌شود و روی کارت، خط زمان و Pine اعمال می‌شود؛ خالی = اتومات */
