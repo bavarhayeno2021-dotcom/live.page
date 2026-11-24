@@ -4582,6 +4582,8 @@ function markAxisGroups(NM){NM=NM||{};const all=[...document.querySelectorAll(".
   window.__AXISGROUPS=groups;const host=document.getElementById("axisGroupsBox");if(host)host.innerHTML=groups.length?groups.map(g=>`⚖️ <b>${g.v}</b> = ${g.names.join(" ، ")}`).join("<br>"):"— هیچ دو معادله‌ای جمع تعادل مساوی ندارند";}
 /* L63 — 🚀 زنجیرهٔ پوزیشن‌ها (اندیکاتور دستی): تایم‌ها → کندل‌ها → ثبت قیمت → اعداد معادلهٔ ± → هدف ؛ پایان کندل‌ها = شروع بعدی */
 const POS_PRICES=JSON.parse(localStorage.getItem("fl_posPrices")||"{}");
+// یک‌بار: قانون جمع‌ها باید روشن باشد؛ تیک قدیمی ذخیره‌شده (خاموش) را اصلاح می‌کند
+if(localStorage.getItem("fl_entryAdd_rev")!=="2"){POS_PRICES.entryAdditions473=true;localStorage.setItem("fl_posPrices",JSON.stringify(POS_PRICES));localStorage.setItem("fl_entryAdd_rev","2");}
 /* L88: جهت — پوزیشن ۱ از معادله ۲ ریل (منفی → صعودی) ؛ بعد یکی‌درمیان برعکس ؛ فقط بلوک ⑥/± می‌تواند جهت قبلی را تکرار کند */
 function applyDir(ch){ch.forEach(p=>{p.neg=!!p.neg;});}
 /* L96 (۲۰ سپتامبر): ورودی دستی تایم‌ها/کندل‌ها برای هر پوزیشن — در حافظه (localStorage) ذخیره می‌شود و روی کارت، خط زمان و Pine اعمال می‌شود؛ خالی = اتومات */
