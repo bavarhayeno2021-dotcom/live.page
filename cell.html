@@ -312,11 +312,11 @@ function extraHtml(nums, M){
   // اگر خروجی ستون چپ تک‌رقمی باشد پسوند وجود ندارد
   const suffix = digitSum(sum2) < 10 ? 0 : sg * purpleLeft(chainAbs);
   const L = pl + suffix, H = L * M, dH = sg * digitSum(H);
-  const C = sg * (digitSum(L) + M), W = C - dH;
+  const C = sg * (digitSum(L) + digitSum(M)), W = C - dH;
   const negNum = x => x < 0 ? '(' + x + ')' : String(x);
   const wrapD = list => (sg < 0 ? '-(' : '') + list.join('+') + (sg < 0 ? ')' : '');
   const digitsH = String(Math.abs(H)).split('');
-  const digitsL = String(Math.abs(L)).split('').concat([String(M)]);
+  const digitsL = String(Math.abs(L)).split('').concat(String(Math.abs(M)).split(''));
   return '<div>' + L + ' × ' + M + ' = ' + H + ' &nbsp; ' + T('height') + '</div>' +
          '<div>' + wrapD(digitsH) + ' = ' + dH + '</div>' +
          '<div>' + wrapD(digitsL) + ' = ' + C + ' &nbsp; ' + T('candles') + '</div>' +
