@@ -454,6 +454,18 @@ function scene(t){
   }
 
   // نام در بالا سمت راست
+  // محتوای پوزیشن تیک‌خورده (از استودیو): پنل بالا-چپ، همیشه قابل خواندن
+  if(FILM_DATA){
+    var PX=14, PY=56, PW=452, LH=26, PH=ROWS.length*LH+16;
+    ctx.fillStyle='rgba(5,7,15,0.78)'; ctx.fillRect(PX,PY,PW,PH);
+    ctx.strokeStyle='rgba(253,230,138,0.55)'; ctx.lineWidth=1; ctx.strokeRect(PX+0.5,PY+0.5,PW-1,PH-1);
+    ROWS.forEach(function(R,i){
+      var yy=PY+8+LH*i+LH/2;
+      ctx.font='bold 15px '+FONT; ctx.textAlign='right'; ctx.textBaseline='middle';
+      ctx.fillStyle=R.c||'#fff'; ctx.fillText(R.t, PX+PW-12, yy);
+    });
+    ctx.textAlign='center';
+  }
   txt(VIEWER_PARAM||'thepilottmnl', W-16, 22, 16, '#e2e8f0', 'right');
   if(VIEWER_PARAM) txt('کاربر: '+VIEWER_PARAM, W-16, 44, 13, '#94a3b8', 'right');
 }
