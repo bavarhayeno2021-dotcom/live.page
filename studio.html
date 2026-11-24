@@ -204,6 +204,18 @@ window.getFilmData0=function(){
   var ex=(state.extra&&state.extra[p])||{h:'',w:'',f:''};
   return {entry:(t[0]&&t[0].t)||'',count:(t[1]&&t[1].t)||'',exit:(t[2]&&t[2].t)||'',height:ex.h||'',wait:ex.w||'',fix:ex.f||'',pos:p+1};
 };
+window.getFilmQueue1=function(){
+  var out=[];var pos=[];
+  try{pos=(JSON.parse(localStorage.getItem('fl_studio_transfer')||'{}').positions)||[];}catch(e){}
+  for(var i=0;i<state.count;i++){
+    var t=(state.top&&state.top[i])||[];
+    var ticked=false;for(var j=0;j<3;j++){if(t[j]&&t[j].u)ticked=true;}
+    if(!ticked)continue;
+    var q=pos[i]||{};
+    out.push({pos:i+1,label:q.label||('P'+(i+1)),timers:q.timers||[],candles:q.candles||[],entry:q.entry||{},exit:q.exit||{},start:q.start||{},count:(t[1]&&t[1].t)||''});
+  }
+  return out;
+};
 window.fillTopFromPublished=function(n,d){
   var p=n-1;if(p<0||p>5)return false;
   if(!Array.isArray(state.pub))state.pub=Array.from({length:6},()=>null);
@@ -788,4 +800,4 @@ inp.addEventListener('input',show);
 fetch(URL,{headers:{apikey:KEY,Authorization:'Bearer '+KEY}}).then(function(r){return r.ok?r.json():[];}).then(function(j){rows=Array.isArray(j)?j:[];show();}).catch(function(){out.textContent='خطا در دریافت اطلاعات';});
 })();
 </script>
-<div id="filmBox" hidden style="position:fixed;inset:0;z-index:100000;background:#000"><button id="filmClose" type="button" style="position:absolute;top:8px;left:8px;z-index:1;padding:8px 12px;border-radius:8px;border:0;background:#bd9561;color:#000;font-weight:bold">بستن ✕</button><iframe id="filmFrame" style="width:100%;height:100%;border:0" allow="autoplay; fullscreen"></iframe></div><script>(function(){var box=document.getElementById("filmBox"),fr=document.getElementById("filmFrame");function open(src){fr.src=src;box.hidden=false;}function close(){box.hidden=true;fr.src="about:blank";}document.getElementById("film0Btn").onclick=function(){var d=window.getFilmData0&&window.getFilmData0();if(!d){alert("هیچ پوزیشن تیک‌خورده‌ای نیست");return;}open("film0.html#d="+encodeURIComponent(btoa(unescape(encodeURIComponent(JSON.stringify(d))))));};document.getElementById("film1Btn").onclick=function(){open("film1.html");};document.getElementById("filmClose").onclick=close;})();</script></body></html>
+<div id="filmBox" hidden style="position:fixed;inset:0;z-index:100000;background:#000"><button id="filmClose" type="button" style="position:absolute;top:8px;left:8px;z-index:1;padding:8px 12px;border-radius:8px;border:0;background:#bd9561;color:#000;font-weight:bold">بستن ✕</button><button id="filmNext" type="button" style="position:fixed;bottom:12px;left:12px;z-index:100001;padding:10px 16px;background:#2f735e;color:#fff;border:0;border-radius:8px;font-size:15px;display:none">پوزیشن بعدی ▶</button><iframe id="filmFrame" style="width:100%;height:100%;border:0" allow="autoplay; fullscreen"></iframe></div><script>(function(){var box=document.getElementById("filmBox"),fr=document.getElementById("filmFrame");function open(src){document.getElementById("filmNext").style.display="none";fr.src=src;box.hidden=false;}function close(){box.hidden=true;fr.src="about:blank";}document.getElementById("film0Btn").onclick=function(){var d=window.getFilmData0&&window.getFilmData0();if(!d){alert("هیچ پوزیشن تیک‌خورده‌ای نیست");return;}open("film0.html#d="+encodeURIComponent(btoa(unescape(encodeURIComponent(JSON.stringify(d))))));};var f1q=[];function f1Next(){var d=f1q.shift();if(!d)return;open("film1.html#d="+encodeURIComponent(btoa(unescape(encodeURIComponent(JSON.stringify(d))))));document.getElementById("filmNext").style.display=f1q.length?"":"none";}document.getElementById("film1Btn").onclick=function(){var q=window.getFilmQueue1&&window.getFilmQueue1();if(!q||!q.length){alert("هیچ پوزیشن تیک‌خورده‌ای نیست");return;}f1q=q;f1Next();};document.getElementById("filmNext").onclick=f1Next;document.getElementById("filmClose").onclick=close;})();</script></body></html>
