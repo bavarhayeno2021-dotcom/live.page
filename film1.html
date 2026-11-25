@@ -70,21 +70,28 @@ var FILM_DATA=(function(){
     return JSON.parse(decodeURIComponent(escape(atob(decodeURIComponent(m[1])))));
   }catch(e){ return null; }
 })();
+var SCAN_ITEMS=null, CONTENT_ROWS=null;
 if(FILM_DATA){
   var FD=FILM_DATA;
   var tmHM=function(s){ var p=String(s||'').split(' '); return p[1]||'—'; };
   var tmDate=function(s){ var p=String(s||'').split(' '); return p[0]||'—'; };
   var dash=function(v){ return (v===undefined||v===null||v==='')?'—':String(v); };
   var tms=FD.timers||[], cds=FD.candles||[];
-  var tEntry=(FD.entry&&FD.entry.time)||'', tExit=(FD.exit&&FD.exit.time)||'', tStart=(FD.start&&FD.start.time)||'';
+  var tEntry=(FD.entry&&FD.entry.time)||'', tExit=(FD.exit&&FD.exit.time)||'';
   var tmTxt=function(k){ var x=tms[k]; return x? dash(x.value)+' ('+tmHM(x.time)+')' : '—'; };
-  ROWS=[
-    {t:'⏱ '+tmHM(tEntry)+'   📆 '+tmDate(tEntry)+'   🎯 نقطهٔ ورود', c:'#fde68a', y:-92},
-    {t:'تایم اول: '+tmTxt(0)+'   ·   تایم دوم: '+tmTxt(1), c:'#e0f2fe', y:-56},
-    {t:'🕯 کندل ۱: '+dash(cds[0])+'   ·   🕯 کندل ۲: '+dash(cds[1])+'   ·   🕯 کندل ۳: '+dash(cds[2]), c:'#e0f2fe', y:-20},
-    {t:'تعداد کندل‌های پوزیشن: '+dash(FD.count)+' 🕯', c:'#e0f2fe', y:16},
-    {t:'⏱ '+tmHM(tExit)+'   📆 '+tmDate(tExit)+'   🏁 نقطهٔ پایان', c:'#fde68a', y:52},
-    {t:'⏱ '+tmHM(tStart)+'   📆 '+tmDate(tStart)+'   🚩 نقطهٔ شروع', c:'#fde68a', y:88, big:true}
+  SCAN_ITEMS=[
+    {t:'تایم اول ⏱ '+tmTxt(0)},
+    {t:'تایم دوم ⏱ '+tmTxt(1)},
+    {t:'کندل اول 🕯 '+dash(cds[0])},
+    {t:'کندل دوم 🕯 '+dash(cds[1])},
+    {t:'کندل سوم 🕯 '+dash(cds[2])}
+  ];
+  CONTENT_ROWS=[
+    {t:'🎯 نقطهٔ ورود: '+tmHM(tEntry)+'   📆 '+tmDate(tEntry), c:'#fde68a'},
+    {t:'🕯 تعداد کندل: '+dash(FD.count), c:'#e0f2fe'},
+    {t:'اصلاح: '+dash(FD.fix), c:'#e0f2fe'},
+    {t:'معطلی: '+dash(FD.wait), c:'#e0f2fe'},
+    {t:'🏁 نقطهٔ پایان: '+tmHM(tExit)+'   📆 '+tmDate(tExit), c:'#fde68a'}
   ];
 }
 var TOTAL=0;
@@ -309,7 +316,7 @@ function scene(t){
   var jolt=(t>=LAUNCH && t<LAUNCH+0.6)?Math.sin(t*90)*4:0;
   if(t>=LAUNCH){ walk=false; var D=900*lf; mx=LX+0.15*D+jolt; ly=LY-0.99*D; }
   var lean=clamp((t-LAUNCH)*2.5,0,1);
-  var SCANS=[{t:'نقطهٔ شروع 🚩 20:00 27oct'},{t:'تایم اول ⏱ 21'},{t:'تایم دوم ⏱ 10'},{t:'کندل اول 🕯 6'},{t:'کندل دوم 🕯 6'}];
+  var SCANS=SCAN_ITEMS||[{t:'نقطهٔ شروع 🚩 20:00 27oct'},{t:'تایم اول ⏱ 21'},{t:'تایم دوم ⏱ 10'},{t:'کندل اول 🕯 6'},{t:'کندل دوم 🕯 6'}];
   var SCANT=[3,15,27,39,51];   // هر ۱۲ ثانیه یک مورد، از لحظهٔ ورود آدمک
   var blink=false;
   SCANT.forEach(function(s0){ if(t>=s0 && t<s0+1.2 && Math.floor((t-s0)*8)%2===0) blink=true; });
@@ -454,17 +461,18 @@ function scene(t){
   }
 
   // نام در بالا سمت راست
-  // محتوای پوزیشن تیک‌خورده (از استودیو): پنل بالا-چپ، همیشه قابل خواندن
-  if(FILM_DATA){
-    var PX=14, PY=56, PW=452, LH=26, PH=ROWS.length*LH+16;
-    ctx.fillStyle='rgba(5,7,15,0.78)'; ctx.fillRect(PX,PY,PW,PH);
-    ctx.strokeStyle='rgba(253,230,138,0.55)'; ctx.lineWidth=1; ctx.strokeRect(PX+0.5,PY+0.5,PW-1,PH-1);
-    ROWS.forEach(function(R,i){
-      var yy=PY+8+LH*i+LH/2;
-      ctx.font='bold 15px '+FONT; ctx.textAlign='right'; ctx.textBaseline='middle';
-      ctx.fillStyle=R.c||'#fff'; ctx.fillText(R.t, PX+PW-12, yy);
+  // محتوای پوزیشن: ۶ ثانیه بعد از پایان متن روی تصویر (پایان زیرنویس‌ها)
+  if(FILM_DATA && CONTENT_ROWS && t>=LINK_AT+6){
+    var CA=clamp((t-(LINK_AT+6))/0.6,0,1);
+    var PW=460, LH=30, PH=CONTENT_ROWS.length*LH+20, PX=(W-PW)/2, PY=110;
+    ctx.save(); ctx.globalAlpha=CA;
+    ctx.fillStyle='rgba(5,7,15,0.82)'; ctx.fillRect(PX,PY,PW,PH);
+    ctx.strokeStyle='rgba(253,230,138,0.6)'; ctx.lineWidth=1.5; ctx.strokeRect(PX+0.5,PY+0.5,PW-1,PH-1);
+    CONTENT_ROWS.forEach(function(R,i){
+      ctx.font='bold 17px '+FONT; ctx.textAlign='right'; ctx.textBaseline='middle';
+      ctx.fillStyle=R.c; ctx.fillText(R.t, PX+PW-14, PY+10+LH*i+LH/2);
     });
-    ctx.textAlign='center';
+    ctx.restore(); ctx.textAlign='center';
   }
   txt(VIEWER_PARAM||'thepilottmnl', W-16, 22, 16, '#e2e8f0', 'right');
   if(VIEWER_PARAM) txt('کاربر: '+VIEWER_PARAM, W-16, 44, 13, '#94a3b8', 'right');

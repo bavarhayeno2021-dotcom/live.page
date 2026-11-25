@@ -212,7 +212,8 @@ window.getFilmQueue1=function(){
     var ticked=false;for(var j=0;j<3;j++){if(t[j]&&t[j].u)ticked=true;}
     if(!ticked)continue;
     var q=pos[i]||{};
-    out.push({pos:i+1,label:q.label||('P'+(i+1)),timers:q.timers||[],candles:q.candles||[],entry:q.entry||{},exit:q.exit||{},start:q.start||{},count:(t[1]&&t[1].t)||''});
+    var ex=(state.extra&&state.extra[i])||{};
+    out.push({pos:i+1,label:q.label||('P'+(i+1)),timers:q.timers||[],candles:q.candles||[],entry:q.entry||{},exit:q.exit||{},start:q.start||{},count:(t[1]&&t[1].t)||'',wait:ex.w||'',fix:ex.f||''});
   }
   return out;
 };
