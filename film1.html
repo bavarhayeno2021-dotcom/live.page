@@ -13,6 +13,8 @@ canvas{width:100%;height:100%;display:block}
 button,select{padding:9px 14px;border-radius:8px;border:0;background:#7c3aed;color:#fff;font-size:14px;cursor:pointer}
 button.alt,select.alt{background:#1e2a4a}
 .info{font-size:13px;opacity:.8;margin-top:8px;line-height:1.8}
+.rec{font-size:13px;margin-top:8px;color:#fca5a5;min-height:1.2em}
+a.btn{display:none;padding:9px 14px;border-radius:8px;background:#16a34a;color:#fff;text-decoration:none;font-size:14px;align-self:center}
 </style>
 </head>
 <body>
@@ -27,8 +29,9 @@ button.alt,select.alt{background:#1e2a4a}
       <option value="10" selected>۱۰ برابر</option>
       <option value="30">۳۰ برابر</option>
     </select>
+    <a id="dl" class="btn" href="#" download>⬇ دانلود ویدیو</a>
   </div>
-  
+  <div id="rec" class="rec"></div>
 </div>
 <script>
 (function(){
@@ -305,11 +308,51 @@ function drawBackground(){
 }
 
 // صدا: موسیقی ملایم و صدای کلید تایپ، هر دو با کد خودمان ساخته می‌شوند (بدون فایل کپی‌رایتی)
+// ===== ضبط ویدیو: هر بار پخش از اول، فیلم (تصویر + صدا) ضبط و آخر فیلم قابل دانلود می‌شود =====
+var REC={mr:null, chunks:[], url:null, mime:'', ext:'webm'};
+var recDest=null;
+function recSetMsg(m){ var e=document.getElementById('rec'); if(e) e.textContent=m; }
+function recPickMime(){
+  var c=['video/mp4;codecs=avc1,mp4a.40.2','video/mp4','video/webm;codecs=vp9,opus','video/webm;codecs=vp8,opus','video/webm'];
+  for(var i=0;i<c.length;i++){ if(MediaRecorder.isTypeSupported(c[i])) return c[i]; }
+  return '';
+}
+function recStart(){
+  if(REC.mr) return;
+  if(typeof MediaRecorder==='undefined'||!cv.captureStream){ recSetMsg('ضبط در این مرورگر پشتیبانی نمی‌شود (از کروم یا فایرفاکس استفاده کنید)'); return; }
+  var tracks=cv.captureStream(30).getVideoTracks();
+  if(recDest) tracks=tracks.concat(recDest.stream.getAudioTracks());
+  var mime=recPickMime();
+  var mr;
+  try{ mr=new MediaRecorder(new MediaStream(tracks), mime?{mimeType:mime,videoBitsPerSecond:3000000}:{videoBitsPerSecond:3000000}); }
+  catch(e){ recSetMsg('ضبط شروع نشد: '+e.message); return; }
+  REC.chunks=[]; REC.mime=mr.mimeType||mime||'video/webm';
+  mr.ondataavailable=function(e){ if(e.data&&e.data.size) REC.chunks.push(e.data); };
+  mr.onstop=recFinish;
+  mr.start(1000);
+  REC.mr=mr;
+  st.speed=1; speedSel.value='1'; speedSel.disabled=true;   // ضبط همیشه در سرعت واقعی، تا ویدیو درست باشد
+  document.getElementById('dl').style.display='none';
+  recSetMsg('● در حال ضبط (سرعت واقعی؛ تب را باز و روشن نگه دارید)');
+}
+function recFinish(){
+  var type=(REC.mime||'video/webm').split(';')[0];
+  REC.ext=(type.indexOf('mp4')>=0)?'mp4':'webm';
+  var blob=new Blob(REC.chunks,{type:type});
+  if(REC.url) URL.revokeObjectURL(REC.url);
+  REC.url=URL.createObjectURL(blob);
+  REC.mr=null; speedSel.disabled=false;
+  var a=document.getElementById('dl');
+  a.href=REC.url; a.download='film1-'+Date.now()+'.'+REC.ext; a.style.display='inline-block';
+  recSetMsg('ضبط تمام شد ('+(blob.size/1048576).toFixed(1)+' مگابایت، '+REC.ext+') — دکمهٔ «دانلود ویدیو» را بزنید');
+}
+function recStop(){ if(REC.mr && REC.mr.state!=='inactive') REC.mr.stop(); }
 var AC=window.AudioContext||window.webkitAudioContext, actx=null, master=null, clickBuf=null;
 function audioInit(){
   if(!AC||actx) return;
   actx=new AC();
   master=actx.createGain(); master.gain.value=0.9; master.connect(actx.destination);
+  recDest=actx.createMediaStreamDestination(); master.connect(recDest);
   var len=Math.floor(actx.sampleRate*0.02);
   clickBuf=actx.createBuffer(1,len,actx.sampleRate);
   var d=clickBuf.getChannelData(0);
@@ -490,14 +533,16 @@ playBtn.onclick=function(){
   if(st.t===0){ buildFP(); lastTi=-1; }
   st.playing=true;
   if(!actx) audioInit(); else if(actx.state==='suspended') actx.resume();
+  if(REC.mr && REC.mr.state==='paused') REC.mr.resume();
+  else if(!REC.mr && st.t===0) recStart();
 };
-pauseBtn.onclick=function(){ st.playing=false; if(actx&&actx.state==='running') actx.suspend(); };
-resetBtn.onclick=function(){ st.t=0; st.playing=false; lastTi=-1; if(actx&&actx.state==='running') actx.suspend(); };
+pauseBtn.onclick=function(){ st.playing=false; if(actx&&actx.state==='running') actx.suspend(); if(REC.mr&&REC.mr.state==='recording') REC.mr.pause(); };
+resetBtn.onclick=function(){ st.t=0; st.playing=false; lastTi=-1; if(actx&&actx.state==='running') actx.suspend(); recStop(); };
 speedSel.onchange=function(){ st.speed=+this.value; };
 buildFP();
 function frame(now){
   var dt=st.last?Math.min(0.1,(now-st.last)/1000):0; st.last=now;
-  if(st.playing){ st.t+=dt*st.speed; if(st.t>=DUR){ st.t=DUR; st.playing=false; } }
+  if(st.playing){ st.t+=dt*st.speed; if(st.t>=DUR){ st.t=DUR; st.playing=false; recStop(); } }
   ctx.setTransform(1,0,0,1,0,0);
   if(!window.__manual) scene(st.t);
   requestAnimationFrame(frame);
