@@ -86,6 +86,7 @@ if(FILM_DATA){
     {t:'کندل سوم 🕯 '+dash(cds[2])}
   ];
   CONTENT_ROWS=[
+    {t:'💱 نماد: '+dash(FD.sym).toUpperCase()+'   ·   '+dash(FD.side), c:'#fde68a'},
     {t:'🎯 نقطهٔ ورود: '+tmHM(tEntry)+'   📆 '+tmDate(tEntry), c:'#fde68a'},
     {t:'🕯 تعداد کندل: '+dash(FD.count), c:'#e0f2fe'},
     {t:'اصلاح: '+dash(FD.fix), c:'#e0f2fe'},
@@ -454,7 +455,7 @@ function scene(t){
     ctx.save(); ctx.globalAlpha=CA2*FADE;
     var CY0=82+9*28+34;   // زیر جملهٔ «البته»؛ کادر خالی بین متن و محتوا می‌ماند
     CONTENT_ROWS.forEach(function(R,i){
-      outlined(R.t, 930, CY0+i*22, 17, R.c, 'right', false);
+      outlined(R.t, 930, CY0+i*20, 17, R.c, 'right', false);
     });
     ctx.restore();
   }
