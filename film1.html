@@ -70,6 +70,7 @@ var FILM_DATA=(function(){
   }catch(e){ return null; }
 })();
 var SCAN_ITEMS=null, CONTENT_ROWS=null;
+var NAR_L1='و زمینه‌سازی برای اجرای مدل پوزیشن از نوع ۲ کندل هم‌سطح 6,6';
 if(FILM_DATA){
   var FD=FILM_DATA;
   var tmHM=function(s){ var p=String(s||'').split(' '); return p[1]||'—'; };
@@ -78,7 +79,10 @@ if(FILM_DATA){
   var tms=FD.timers||[], cds=FD.candles||[];
   var tEntry=(FD.entry&&FD.entry.time)||'', tExit=(FD.exit&&FD.exit.time)||'';
   var tmTxt=function(k){ var x=tms[k]; return x? dash(x.value)+' ('+tmHM(x.time)+')' : '—'; };
+  if(FD.model) NAR_L1='و زمینه‌سازی برای اجرای مدل پوزیشن از نوع '+FD.model;
+  var tStart0=(FD.start&&FD.start.time)||'';
   SCAN_ITEMS=[
+    {t:'نقطهٔ شروع 🚩 '+tmHM(tStart0)+' '+tmDate(tStart0)},
     {t:'تایم اول ⏱ '+tmTxt(0)},
     {t:'تایم دوم ⏱ '+tmTxt(1)},
     {t:'کندل اول 🕯 '+dash(cds[0])},
@@ -331,7 +335,7 @@ function scene(t){
   if(t>=LAUNCH){ walk=false; var D=900*lf; mx=LX+0.15*D+jolt; ly=LY-0.99*D; }
   var lean=clamp((t-LAUNCH)*2.5,0,1);
   var SCANS=SCAN_ITEMS||[{t:'نقطهٔ شروع 🚩 20:00 27oct'},{t:'تایم اول ⏱ 21'},{t:'تایم دوم ⏱ 10'},{t:'کندل اول 🕯 6'},{t:'کندل دوم 🕯 6'}];
-  var SCANT=[3,15,27,39,51];   // هر ۱۲ ثانیه یک مورد، از لحظهٔ ورود آدمک
+  var SCANT=[3,15,27,39,51,63];   // هر ۱۲ ثانیه یک مورد، از لحظهٔ ورود آدمک
   var blink=false;
   SCANT.forEach(function(s0){ if(t>=s0 && t<s0+1.2 && Math.floor((t-s0)*8)%2===0) blink=true; });
   var m={walk:walk, ph:t*5, look: walk?0:Math.sin(t*1.3)*0.6, rAng:0.55, led:blink?'#22c55e':null};
@@ -433,7 +437,7 @@ function scene(t){
   // شرح: thepilot در حال شناسایی مقدمات قبل ورود به پوزیشن
   var NAR=[
     'thepilot در حال شناسایی مقدمات قبل ورود به پوزیشن است',
-    'و زمینه‌سازی برای اجرای مدل پوزیشن از نوع ۲ کندل هم‌سطح 6,6',
+    NAR_L1,
     'را انجام می‌دهد؛',
     'تلاش می‌کند یک پوزیشن دقیق و با کیفیت را مهیا کند.',
     '', '', '', '', '',
@@ -453,9 +457,9 @@ function scene(t){
   if(FILM_DATA && CONTENT_ROWS && t>=LINK_AT+6){
     var CA2=clamp((t-(LINK_AT+6))/0.8,0,1);
     ctx.save(); ctx.globalAlpha=CA2*FADE;
-    var CY0=82+9*28+34;   // زیر جملهٔ «البته»؛ کادر خالی بین متن و محتوا می‌ماند
+    var CY0=82+9*28+28;   // درست زیر جملهٔ «البته»؛ ۸ ردیف تا بالای لینک پایین جا می‌شود
     CONTENT_ROWS.forEach(function(R,i){
-      outlined(R.t, 930, CY0+i*20, 17, R.c, 'right', false);
+      outlined(R.t, 930, CY0+i*17, 16, R.c, 'right', false);
     });
     ctx.restore();
   }
