@@ -33,6 +33,7 @@ a.btn{display:none;padding:9px 14px;border-radius:8px;background:#16a34a;color:#
   </div>
   <div id="rec" class="rec"></div>
 </div>
+<audio id="bgm" src="calm.mp3" loop preload="auto"></audio>
 <script>
 (function(){
 var cv=document.getElementById('cv'), ctx=cv.getContext('2d');
@@ -289,10 +290,12 @@ function recPickMime(){
   for(var i=0;i<c.length;i++){ if(MediaRecorder.isTypeSupported(c[i])) return c[i]; }
   return '';
 }
+function recClock(s){ var m=Math.floor(s/60), r=s%60; return (m<10?'0':'')+m+':'+(r<10?'0':'')+r; }
 function recStart(){
   if(REC.mr) return;
-  if(typeof MediaRecorder==='undefined'||!cv.captureStream){ recSetMsg('ضبط در این مرورگر پشتیبانی نمی‌شود (از کروم یا فایرفاکس استفاده کنید)'); return; }
-  var tracks=cv.captureStream(30).getVideoTracks();
+  if(typeof MediaRecorder==='undefined'||!cv.captureStream){ recSetMsg('ضبط در این مرورگر پشتیبانی نمی‌شود. از کروم یا سامسونگ اینترنت استفاده کنید'); return; }
+  var tracks=[];
+  try{ tracks=cv.captureStream(30).getVideoTracks(); }catch(e){ recSetMsg('ضبط تصویر شروع نشد: '+e.message); return; }
   if(recDest) tracks=tracks.concat(recDest.stream.getAudioTracks());
   var mime=recPickMime();
   var mr;
@@ -301,13 +304,17 @@ function recStart(){
   REC.chunks=[]; REC.mime=mr.mimeType||mime||'video/webm';
   mr.ondataavailable=function(e){ if(e.data&&e.data.size) REC.chunks.push(e.data); };
   mr.onstop=recFinish;
+  mr.onerror=function(e){ recSetMsg('خطای ضبط: '+((e&&e.error&&e.error.name)||'نامشخص')); };
   mr.start(1000);
-  REC.mr=mr;
-  st.speed=1; speedSel.value='1'; speedSel.disabled=true;   // ضبط همیشه در سرعت واقعی، تا ویدیو درست باشد
+  REC.mr=mr; REC.t0=Date.now();
+  st.speed=1; speedSel.value='1'; speedSel.disabled=true;   // ضبط همیشه در سرعت واقعی
   document.getElementById('dl').style.display='none';
-  recSetMsg('● در حال ضبط (سرعت واقعی؛ تب را باز و روشن نگه دارید)');
+  clearInterval(REC.timer);
+  REC.timer=setInterval(function(){ if(REC.mr) recSetMsg('● در حال ضبط '+recClock(Math.floor((Date.now()-REC.t0)/1000))+' — تب را باز و روشن نگه دارید'); },500);
+  recSetMsg('● در حال ضبط '+recClock(0));
 }
 function recFinish(){
+  clearInterval(REC.timer);
   var type=(REC.mime||'video/webm').split(';')[0];
   REC.ext=(type.indexOf('mp4')>=0)?'mp4':'webm';
   var blob=new Blob(REC.chunks,{type:type});
@@ -316,7 +323,8 @@ function recFinish(){
   REC.mr=null; speedSel.disabled=false;
   var a=document.getElementById('dl');
   a.href=REC.url; a.download='film0-'+Date.now()+'.'+REC.ext; a.style.display='inline-block';
-  recSetMsg('ضبط تمام شد ('+(blob.size/1048576).toFixed(1)+' مگابایت، '+REC.ext+') — دکمهٔ «دانلود ویدیو» را بزنید');
+  recSetMsg('ضبط تمام شد ('+(blob.size/1048576).toFixed(1)+' مگابایت). اگر دانلود خودکار شروع نشد، دکمهٔ «⬇ دانلود ویدیو» را بزنید');
+  try{ a.click(); }catch(e){}
 }
 function recStop(){ if(REC.mr && REC.mr.state!=='inactive') REC.mr.stop(); }
 var AC=window.AudioContext||window.webkitAudioContext, actx=null, master=null, clickBuf=null;
@@ -324,7 +332,7 @@ function audioInit(){
   if(!AC||actx) return;
   actx=new AC();
   master=actx.createGain(); master.gain.value=0.9; master.connect(actx.destination);
-  recDest=actx.createMediaStreamDestination(); master.connect(recDest);
+  try{ recDest=actx.createMediaStreamDestination(); master.connect(recDest); }catch(e){ recDest=null; }
   var freqs=[110,164.81,220,261.63];
   freqs.forEach(function(f,i){
     var o=actx.createOscillator(); o.type='sine'; o.frequency.value=f;
@@ -503,6 +511,30 @@ function scene(t){
   if(VIEWER_PARAM) txt('کاربر: '+VIEWER_PARAM, W-16, 44, 13, '#94a3b8', 'right');
 }
 
+var bgmEl=document.getElementById('bgm'), bgmNode=null, bgmGain=null;
+var DAY_MUSIC=['07_Sunday.mp3','01_Monday.mp3','02_Tuesday.mp3','03_Wednesday.mp3','04_Thursday.mp3','05_Friday.mp3','06_Saturday.mp3'];
+function bgmPickSrc(){
+  var s=''; try{ var mm=/[#&]d=([^&]+)/.exec(location.hash); if(mm){ var FDx=JSON.parse(decodeURIComponent(escape(atob(decodeURIComponent(mm[1]))))); s=(FDx.entry&&FDx.entry.time)||''; } }catch(e){}
+  var m=String(s).match(/(\d{4})-(\d{2})-(\d{2})/); var f='calm.mp3';
+  if(m){ var d=new Date(+m[1],+m[2]-1,+m[3]); f=DAY_MUSIC[d.getDay()]; }
+  if(bgmEl) bgmEl.src=f;
+}
+bgmPickSrc();
+function bgmGainFor(){ return (st.speed===1)?0.45:0; }
+function bgmSetup(){
+  if(bgmNode||!actx||!bgmEl) return;
+  try{
+    bgmNode=actx.createMediaElementSource(bgmEl);
+    bgmGain=actx.createGain(); bgmGain.gain.value=bgmGainFor();
+    bgmNode.connect(bgmGain); bgmGain.connect(master);
+  }catch(e){ bgmNode=null; }
+}
+function bgmUpdate(){ if(bgmGain&&actx) bgmGain.gain.setTargetAtTime(bgmGainFor(), actx.currentTime, 0.05); }
+function bgmStart(){
+  bgmSetup(); bgmUpdate();
+  if(bgmEl) bgmEl.play().catch(function(){});
+}
+
 var lastTi=-1;
 
 var playBtn=document.getElementById('play'), pauseBtn=document.getElementById('pause'), resetBtn=document.getElementById('reset'), speedSel=document.getElementById('speed');
@@ -510,17 +542,19 @@ playBtn.onclick=function(){
   if(st.t>=DUR) st.t=0;
   if(st.t===0){ st.dir=-st.dir; buildFP(); lastTi=-1; }
   st.playing=true;
-  if(!actx) audioInit(); else if(actx.state==='suspended') actx.resume();
+  try{ if(!actx) audioInit(); else if(actx.state==='suspended') actx.resume(); }catch(e){ recSetMsg('صدا: '+e.message); }
   if(REC.mr && REC.mr.state==='paused') REC.mr.resume();
-  else if(!REC.mr && st.t===0) recStart();
+  else if(!REC.mr) recStart();
+  bgmStart();
 };
-pauseBtn.onclick=function(){ st.playing=false; if(actx&&actx.state==='running') actx.suspend(); if(REC.mr&&REC.mr.state==='recording') REC.mr.pause(); };
-resetBtn.onclick=function(){ st.t=0; st.playing=false; lastTi=-1; if(actx&&actx.state==='running') actx.suspend(); recStop(); };
-speedSel.onchange=function(){ st.speed=+this.value; };
+pauseBtn.onclick=function(){ bgmEl.pause(); st.playing=false; if(actx&&actx.state==='running') actx.suspend(); if(REC.mr&&REC.mr.state==='recording') REC.mr.pause(); };
+resetBtn.onclick=function(){ bgmEl.pause(); bgmEl.currentTime=0; st.t=0; st.playing=false; lastTi=-1; if(actx&&actx.state==='running') actx.suspend(); recStop(); };
+speedSel.onchange=function(){ st.speed=+this.value; bgmUpdate(); };
+recSetMsg('نسخهٔ ضبط ۳ — با «▶ پخش» ضبط خودکار شروع می‌شود؛ آخر فیلم فایل دانلود می‌شود');
 buildFP();
 function frame(now){
   var dt=st.last?Math.min(0.1,(now-st.last)/1000):0; st.last=now;
-  if(st.playing){ st.t+=dt*st.speed; if(st.t>=DUR){ st.t=DUR; st.playing=false; recStop(); } }
+  if(st.playing){ st.t+=dt*st.speed; if(st.t>=DUR){ st.t=DUR; st.playing=false; recStop(); bgmEl.pause(); } }
   ctx.setTransform(1,0,0,1,0,0);
   scene(st.t);
   requestAnimationFrame(frame);
@@ -528,5 +562,5 @@ function frame(now){
 requestAnimationFrame(frame);
 })();
 </script>
-</body>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a603391a0a9a35e8',t:'MTc5NTYzNjY1Mw=='};var l=window.parent.location,o;try{o=new URL(l.origin).origin}catch(e){try{o=new URL(new URL(l.href).origin).origin}catch(e){o=''}}var u='/cdn-cgi/challenge-platform/scripts/jsd/main.js?ray=a603391a0a9a35e8',a=document.createElement('script');a.src=o?new URL(u,o).href:u;document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
