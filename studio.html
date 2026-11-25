@@ -213,7 +213,7 @@ window.getFilmQueue1=function(){
     if(!ticked)continue;
     var q=pos[i]||{};
     var ex=(state.extra&&state.extra[i])||{};
-    out.push({pos:i+1,label:q.label||('P'+(i+1)),timers:q.timers||[],candles:q.candles||[],entry:q.entry||{},exit:q.exit||{},start:q.start||{},count:(t[1]&&t[1].t)||'',wait:ex.w||'',fix:ex.f||''});
+    out.push({pos:i+1,label:q.label||('P'+(i+1)),timers:q.timers||[],candles:q.candles||[],entry:q.entry||{},exit:q.exit||{},start:q.start||{},count:(t[1]&&t[1].t)||'',wait:ex.w||'',fix:ex.f||'',model:(state.cols&&state.cols[i]&&state.cols[i][7]&&state.cols[i][7].t)||''});
   }
   return out;
 };

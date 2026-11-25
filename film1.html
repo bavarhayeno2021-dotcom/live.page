@@ -93,6 +93,18 @@ if(FILM_DATA){
     {t:'معطلی: '+dash(FD.wait), c:'#e0f2fe'},
     {t:'🏁 نقطهٔ پایان: '+tmHM(tExit)+'   📆 '+tmDate(tExit), c:'#fde68a'}
   ];
+  var MT={
+    'مدل ۲ تایم⏱⏱ و کندل اول🕯 هم‌سطح':'مدل ۲ تایم هم‌سطح و کندل اول هم‌سطح',
+    'مدل ۲ تایم⏱_⏱ با ۱ اختلاف':'مدل ۲ تایم با یک اختلاف',
+    'مدل هم‌سطح تایم دوم⏱ و کندل 🕯 اول':'مدل هم‌سطح: تایم دوم و کندل اول',
+    'مدل امتداد تایم‌ها⏱____🕯 و کندل اول 🕯':'مدل امتداد تایم‌ها و کندل اول',
+    'مدل ۲ کندل🕯🕯 هم‌سطح':'مدل ۲ کندل هم‌سطح',
+    'مدل ۲ کندل 🕯_🕯 با یک اختلاف':'مدل ۲ کندل با یک اختلاف',
+    'مدل ۳ کندل 🕯🕯🕯 هم‌سطح':'مدل ۳ کندل هم‌سطح',
+    'مدل ۴ کندل 🕯🕯🕯🕯 حاصل جمع هم‌سطح':'مدل ۴ کندل: حاصل جمع هم‌سطح'
+  };
+  var mText=MT[FD.model]||(FD.model?('مدل: '+FD.model):'مدل پوزیشن: —');
+  CONTENT_ROWS.unshift({t:mText, c:'#67e8f9'});
 }
 var TOTAL=0;
 ROWS.forEach(function(R){
@@ -438,7 +450,16 @@ function scene(t){
     'کندل اول 🕯 6🎯',
     'کندل دوم 🕯 6🏁'
   ];
-  typeBlock(FIN, 100, 14, 930, 380, 27, 19, '#fde68a', 'right');
+  if(!FILM_DATA) typeBlock(FIN, 100, 14, 930, 380, 27, 19, '#fde68a', 'right');
+  // محتوای پوزیشن زیر متن (راست‌چین)، ۶ ثانیه بعد از پایان زیرنویس‌ها
+  if(FILM_DATA && CONTENT_ROWS && t>=LINK_AT+6){
+    var CA2=clamp((t-(LINK_AT+6))/0.8,0,1);
+    ctx.save(); ctx.globalAlpha=CA2*FADE;
+    CONTENT_ROWS.forEach(function(R,i){
+      outlined(R.t, 930, 368+i*26, i===0?17:18, R.c, 'right', false);
+    });
+    ctx.restore();
+  }
 
   // زیرنویس‌ها: یک خط که از سمت چپ وارد و از سمت راست خارج می‌شود
   SUBS.forEach(function(S){
@@ -461,19 +482,6 @@ function scene(t){
   }
 
   // نام در بالا سمت راست
-  // محتوای پوزیشن: ۶ ثانیه بعد از پایان متن روی تصویر (پایان زیرنویس‌ها)
-  if(FILM_DATA && CONTENT_ROWS && t>=LINK_AT+6){
-    var CA=clamp((t-(LINK_AT+6))/0.6,0,1);
-    var PW=460, LH=30, PH=CONTENT_ROWS.length*LH+20, PX=(W-PW)/2, PY=110;
-    ctx.save(); ctx.globalAlpha=CA;
-    ctx.fillStyle='rgba(5,7,15,0.82)'; ctx.fillRect(PX,PY,PW,PH);
-    ctx.strokeStyle='rgba(253,230,138,0.6)'; ctx.lineWidth=1.5; ctx.strokeRect(PX+0.5,PY+0.5,PW-1,PH-1);
-    CONTENT_ROWS.forEach(function(R,i){
-      ctx.font='bold 17px '+FONT; ctx.textAlign='right'; ctx.textBaseline='middle';
-      ctx.fillStyle=R.c; ctx.fillText(R.t, PX+PW-14, PY+10+LH*i+LH/2);
-    });
-    ctx.restore(); ctx.textAlign='center';
-  }
   txt(VIEWER_PARAM||'thepilottmnl', W-16, 22, 16, '#e2e8f0', 'right');
   if(VIEWER_PARAM) txt('کاربر: '+VIEWER_PARAM, W-16, 44, 13, '#94a3b8', 'right');
 }
