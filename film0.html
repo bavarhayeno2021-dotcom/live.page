@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>فیلم ۰ - اسکنر تایم‌یاب (فقط یوتیوب)</title>
+<title>فیلم ۱ - اسکنر تایم‌یاب (فقط یوتیوب)</title>
 <style>
 body{margin:0;background:#05070f;color:#fff;font-family:Vazirmatn,Tahoma,sans-serif}
 .wrap{max-width:820px;margin:0 auto;padding:12px}
@@ -28,19 +28,20 @@ button.alt,select.alt{background:#1e2a4a}
       <option value="30">۳۰ برابر</option>
     </select>
   </div>
-  <div class="info">فیلم ۰ (فقط برای یوتیوب، قبل از رسیدن به پوزیشن) · مدت ۳ دقیقه · نام کاربر از آدرس صفحه خوانده می‌شود: ?name=نام · داده‌ها نمونه‌اند.</div>
+  <div style="margin-top:12px"><video src="Formul-teaser-v3-ext.mp4" controls playsinline preload="metadata" style="width:100%;border-radius:14px;background:#000;display:block"></video></div>
 </div>
 <script>
 (function(){
 var cv=document.getElementById('cv'), ctx=cv.getContext('2d');
-var W=960,H=540,G=470,FAR=400,DUR=180;
+var W=960,H=540,G=470,FAR=400,DUR=262;
 var FA='۰۱۲۳۴۵۶۷۸۹';
 function fa(s){return String(s).replace(/[0-9]/g,function(d){return FA[+d];});}
 function pad2(n){return (n<10?'0':'')+n;}
 function mmss(s){var m=Math.floor(s/60),r=Math.floor(s%60);return fa(pad2(m)+':'+pad2(r));}
 
 // ثابت‌ها: زمان و تاریخ حال حاضر همان متن فیلم کاربر است (ثابت، نه زنده)
-var NOW_TIME='23:00:35';          // TODO: مقدار دقیق متن فیلم
+var ENTRY_HM='21:00';  // تایم ورود فیلم ۱ (نیویورک)
+var NOW_TIME=(function(){ var p=ENTRY_HM.split(':'); var m=((+p[0])*60+(+p[1])-3+1440)%1440; return pad2(Math.floor(m/60))+':'+pad2(m%60); })(); // ۳ دقیقه قبل از ورود
 var NOW_DATE='۲۹ اکتبر ۲۰۲۶';
 var BRAND='thepilottmnl001';
 var LINK='https://thepilottmnl001-2eg.pages.dev/?ref=F-DFQCC';
@@ -52,32 +53,67 @@ var VIEWER_PARAM=(function(){
 var FONT='Vazirmatn,Tahoma,sans-serif';
 var DATE_FA='۲۹ اکتبر ۲۰۲۶';
 var NARR=[
-  {start:116, cps:9, t:'الان یک مورد پیدا شد و در حال تجزیه و تحلیل محتویات شیء یافت شده هست', c:'#f5ecd6', y:50}
 ];
 var TYPE_START=126, CPS=5.5;
 var ROWS=[
   {t:'⏱ 23:00   📆 '+DATE_FA+'   🎯 نقطهٔ ورود', c:'#fde68a', y:-92},
-  {t:'شماره ارتفاع: ۳۶', c:'#e0f2fe', y:-56},
+  {t:'شماره ارتفاع: ۲۷', c:'#e0f2fe', y:-56},
   {t:'معطلی یا اصلاح: ۱ کندل اصلاح', c:'#e0f2fe', y:-20},
   {t:'تعداد کندل‌های پوزیشن: ۶ 🕯', c:'#e0f2fe', y:16},
   {t:'⏱ 02:00   📆 ۳۰ اکتبر ۲۰۲۶   🏁 نقطهٔ پایان', c:'#fde68a', y:52},
   {t:'⏱ '+NOW_TIME+' NY   📆 '+NOW_DATE, c:'#fde68a', y:88, big:true}
 ];
-(function(){
+// ===== داده از استودیو: یک پوزیشن تیک‌خورده (#d=base64 JSON) =====
+var FILM_DATA=(function(){
   try{
-    var m=/[#&]d=([^&]+)/.exec(location.hash);
-    if(!m) return;
-    var d=JSON.parse(decodeURIComponent(escape(atob(decodeURIComponent(m[1])))));
-    ROWS=[
-      {t:'🎯 ورود: '+d.entry, c:'#fde68a', y:-92},
-      {t:'شماره ارتفاع: '+d.height, c:'#e0f2fe', y:-56},
-      {t:'انتظار: '+d.wait+'   ·   اصلاح: '+d.fix, c:'#e0f2fe', y:-20},
-      {t:'تعداد کندل‌های پوزیشن: '+d.count+' 🕯', c:'#e0f2fe', y:16},
-      {t:'🏁 پایان: '+d.exit, c:'#fde68a', y:52},
-      {t:'⏱ '+NOW_TIME+' NY   📆 '+NOW_DATE, c:'#fde68a', y:88, big:true}
-    ];
-  }catch(e){}
+    var m=(location.hash||'').match(/[#&]d=([^&]+)/); if(!m) return null;
+    return JSON.parse(decodeURIComponent(escape(atob(decodeURIComponent(m[1])))));
+  }catch(e){ return null; }
 })();
+var SCAN_ITEMS=null, CONTENT_ROWS=null;
+var NAR_L1='و زمینه‌سازی برای اجرای مدل پوزیشن از نوع ۲ کندل هم‌سطح 6,6';
+if(FILM_DATA){
+  var FD=FILM_DATA;
+  var tmHM=function(s){ var p=String(s||'').split(' '); return p[1]||'—'; };
+  var tmDate=function(s){ var p=String(s||'').split(' '); return p[0]||'—'; };
+  var dash=function(v){ return (v===undefined||v===null||v==='')?'—':String(v); };
+  var tms=FD.timers||[], cds=FD.candles||[];
+  var tEntry=(FD.entry&&FD.entry.time)||'', tExit=(FD.exit&&FD.exit.time)||'';
+  var tmTxt=function(k){ var x=tms[k]; return x? dash(x.value)+' ('+tmHM(x.time)+')' : '—'; };
+  if(FD.model) NAR_L1='و زمینه‌سازی برای اجرای مدل پوزیشن از نوع '+FD.model;
+  var tStart0=(FD.start&&FD.start.time)||'';
+  SCAN_ITEMS=[
+    {t:'نقطهٔ شروع 🚩 '+tmHM(tStart0)+' '+tmDate(tStart0)},
+    {t:'تایم اول ⏱ '+tmTxt(0)},
+    {t:'تایم دوم ⏱ '+tmTxt(1)},
+    {t:'کندل اول 🕯 '+dash(cds[0])},
+    {t:'کندل دوم 🕯 '+dash(cds[1])},
+    {t:'کندل سوم 🕯 '+dash(cds[2])}
+  ];
+  CONTENT_ROWS=[
+    {t:'💱 '+dash(FD.sym).toUpperCase(), c:'#fde68a'},
+    {t:(FD.side==='BUY'||FD.side==='SELL')?FD.side:'—', c:(FD.side==='SELL')?'#fca5a5':'#86efac'},
+    {t:'🎯 نقطهٔ ورود: '+tmHM(tEntry)+'   📆 '+tmDate(tEntry), c:'#fde68a'},
+    {t:'🕯 تعداد کندل: '+dash(FD.count), c:'#e0f2fe'},
+    {t:'اصلاح: '+dash(FD.fix), c:'#e0f2fe'},
+    {t:'معطلی: '+dash(FD.wait), c:'#e0f2fe'},
+    {t:'📏 ارتفاع: '+dash(FD.height), c:'#e0f2fe'},
+    {t:'🏁 نقطهٔ پایان: '+tmHM(tExit)+'   📆 '+tmDate(tExit), c:'#fde68a'}
+  ];
+  var MT={
+    'مدل عادی':'مدل عادی',
+    'مدل ۲ تایم⏱⏱ و کندل اول🕯 هم‌سطح':'مدل ۲ تایم هم‌سطح و کندل اول هم‌سطح',
+    'مدل ۲ تایم⏱_⏱ با ۱ اختلاف':'مدل ۲ تایم با یک اختلاف',
+    'مدل هم‌سطح تایم دوم⏱ و کندل 🕯 اول':'مدل هم‌سطح: تایم دوم و کندل اول',
+    'مدل امتداد تایم‌ها⏱____🕯 و کندل اول 🕯':'مدل امتداد تایم‌ها و کندل اول',
+    'مدل ۲ کندل🕯🕯 هم‌سطح':'مدل ۲ کندل هم‌سطح',
+    'مدل ۲ کندل 🕯_🕯 با یک اختلاف':'مدل ۲ کندل با یک اختلاف',
+    'مدل ۳ کندل 🕯🕯🕯 هم‌سطح':'مدل ۳ کندل هم‌سطح',
+    'مدل ۴ کندل 🕯🕯🕯🕯 حاصل جمع هم‌سطح':'مدل ۴ کندل: حاصل جمع هم‌سطح'
+  };
+  var mText=FD.model||'مدل پوزیشن: —';
+  CONTENT_ROWS.unshift({t:mText, c:'#67e8f9'});
+}
 var TOTAL=0;
 ROWS.forEach(function(R){
   R.chars=Array.from(R.t);
@@ -111,11 +147,15 @@ var SUBS=[], LINK_AT=0;
   });
   LINK_AT=t;
 })();
+// زمان تایپ محتوای پوزیشن (مثل متن بالا): از ۶ ثانیه بعد از زیرنویس‌ها شروع می‌شود
+var CONT_T0=LINK_AT+6, CONT_CPS=16, CONT_GAP=0.25, CONT_END=CONT_T0;
+if(FILM_DATA && CONTENT_ROWS){ CONTENT_ROWS.forEach(function(R){ R.chars=Array.from(R.t); CONT_END+=R.chars.length/CONT_CPS+CONT_GAP; }); }
+var NOW_MIN=(+NOW_TIME.split(':')[0])*60+(+NOW_TIME.split(':')[1]);
 
 // هندسه
 var RX=260, RY=150;
-var US=0.76;
-var st={t:0,playing:false,last:0,speed:10,dir:-1};
+var US=0.33;
+var st={t:0,playing:false,last:0,speed:10,dir:1};
 function clamp(v,a,b){return Math.max(a,Math.min(b,v));}
 function lerp(a,b,f){return a+(b-a)*f;}
 function ease(f){return f*f*(3-2*f);}
@@ -149,15 +189,10 @@ function ik(s,tg,L1,L2,maxX){
   return {j:j,e:{x:s.x+dx*k,y:s.y+dy*k}};
 }
 function X(u){ var x=-40+u*920; return st.dir>0?x:(W-x); }
-function worldX(t){
-  if(t<50) return X(seg(t,0,50));
-  if(t<54) return X(1);
-  if(t<100) return X(lerp(1,US,ease(seg(t,54,100))));
-  return X(US);
-}
-function laneY(t){ return t<52?G:FAR; }
-function facing(t){ return t<52?st.dir:-st.dir; }
-function isWalking(t){ return (t<50)||(t>=54&&t<100); }
+function worldX(t){ return X(lerp(0,US,ease(seg(t,0,100)))); }
+function laneY(t){ return lerp(G,FAR,ease(seg(t,50,54))); }
+function facing(t){ return st.dir; }
+function isWalking(t){ return t<100; }
 var FP=[];
 function buildFP(){
   FP=[];
@@ -206,8 +241,8 @@ function drawMan(m){
   var cx=hx+Math.cos(a)*26, cy=hy+Math.sin(a)*26;
   ctx.save(); ctx.translate(cx,cy); ctx.rotate(a);
   ctx.fillStyle='#334155'; ctx.fillRect(-6,4,14,22);
-  ctx.fillStyle='#cbd5e1'; ctx.fillRect(-36,-9,70,18);
-  ctx.fillStyle='#0ea5e9'; ctx.fillRect(-30,-5,22,10);
+  ctx.fillStyle='#9ca3af'; ctx.fillRect(-36,-9,70,18);
+  ctx.fillStyle='#6b7280'; ctx.fillRect(-30,-5,22,10);
   ctx.fillStyle='#334155'; ctx.fillRect(10,-9,16,5);
   if(m.led){
     ctx.shadowColor=m.led; ctx.shadowBlur=16; ctx.fillStyle=m.led;
@@ -275,28 +310,6 @@ function audioInit(){
   if(!AC||actx) return;
   actx=new AC();
   master=actx.createGain(); master.gain.value=0.9; master.connect(actx.destination);
-  var freqs=[110,164.81,220,261.63];
-  freqs.forEach(function(f,i){
-    var o=actx.createOscillator(); o.type='sine'; o.frequency.value=f;
-    var g=actx.createGain(); g.gain.value=0.07;
-    var lfo=actx.createOscillator(); lfo.frequency.value=0.05+i*0.02;
-    var lg=actx.createGain(); lg.gain.value=0.035;
-    lfo.connect(lg); lg.connect(g.gain);
-    o.connect(g); g.connect(master);
-    o.start(); lfo.start();
-  });
-  var notes=[220,261.63,329.63,392,329.63,261.63,196,261.63];
-  var ni=0;
-  setInterval(function(){
-    if(!actx||actx.state!=='running') return;
-    var o=actx.createOscillator(), g=actx.createGain();
-    o.type='sine'; o.frequency.value=notes[ni%notes.length]*2; ni++;
-    var now=actx.currentTime;
-    g.gain.setValueAtTime(0.0001,now);
-    g.gain.exponentialRampToValueAtTime(0.05,now+0.05);
-    g.gain.exponentialRampToValueAtTime(0.0001,now+2.2);
-    o.connect(g); g.connect(master); o.start(now); o.stop(now+2.3);
-  },2400);
   var len=Math.floor(actx.sampleRate*0.02);
   clickBuf=actx.createBuffer(1,len,actx.sampleRate);
   var d=clickBuf.getChannelData(0);
@@ -319,115 +332,130 @@ function scene(t){
   }
 
   var mx=worldX(t), ly=laneY(t), fc=facing(t), walk=isWalking(t);
-  var m={walk:walk, ph:t*5, look: walk?0:Math.sin(t*1.3)*0.6, rAng:0.55, led:null};
-  if(t>=96) m.look=1;
-  if(t>=103 && t<110){ m.rAng=lerp(0.55,-0.15,ease(seg(t,103,110))); }
-  if(t>=110 && t<176){ m.rAng=-0.15; }
-  if(t>=176){ m.rAng=lerp(-0.15,0.55,ease(seg(t,176,180))); }
-  if(t>=100 && t<103){ m.led=(Math.floor(t*5)%2===0)?'#22c55e':'#14532d'; }
-  if(t>=103 && t<176){ m.led='#22c55e'; }
+  var FADE=1;   // متن‌ها تا آخر روی صفحه می‌مانند
+  // بعد از تمام شدن کل متن: نور از بالا، آدمک زیر نور می‌رود، سریع بالا می‌رود و از سقف تصویر خارج می‌شود
+  var BT=CONT_END+1.0;      // لحظهٔ روشن شدن نور
+  var RT=BT+2.0;            // لحظهٔ شروع پرواز به بالا
+  var mx0=worldX(100), BX=mx0+30*fc;   // محل نور روی زمین
+  var lean=0;
+  if(t>=BT+0.3){ mx=lerp(mx0,BX,ease(seg(t,BT+0.3,BT+1.8))); walk=(t<BT+1.8); }
+  if(t>=RT){ var rp=seg(t,RT,RT+1.4); ly=FAR-760*rp*rp; mx=BX; walk=false; }
+  var SCANS=SCAN_ITEMS||[{t:'نقطهٔ شروع 🚩 20:00 27oct'},{t:'تایم اول ⏱ 21'},{t:'تایم دوم ⏱ 10'},{t:'کندل اول 🕯 6'},{t:'کندل دوم 🕯 6'}];
+  var SCANT=[3,15,27,39,51,63];   // هر ۱۲ ثانیه یک مورد، از لحظهٔ ورود آدمک
+  var blink=false;
+  SCANT.forEach(function(s0){ if(t>=s0 && t<s0+1.2 && Math.floor((t-s0)*8)%2===0) blink=true; });
+  var m={walk:walk, ph:t*5, look: walk?0:Math.sin(t*1.3)*0.6, rAng:0.55, led:blink?'#22c55e':null};
+  if(t>=100) m.look=1;
+  if(t>=100 && t<107){ m.rAng=lerp(0.55,-0.15,ease(seg(t,100,107))); }
+  if(t>=107){ m.rAng=-0.15; }
+  if(t>=RT-0.4){ m.rAng=lerp(-0.15,1.3,ease(seg(t,RT-0.4,RT))); }   // دست به سمت بالا هنگام پرواز
 
   ctx.save();
-  ctx.translate(mx,ly); ctx.scale(fc,1);
+  ctx.translate(mx,ly); ctx.scale(fc,1); ctx.rotate(0.35*lean);
   var tipLocal=drawMan(m).tip;
   ctx.restore();
   var tip={x:mx+fc*tipLocal.x, y:ly+tipLocal.y};
 
   // نام آدمک روی سینه‌اش
   txt('thepilot', mx, ly-131, 12, '#e2e8f0', 'center');
-
-  if(t>=100 && t<118){
-    var rr=12+(t-100)*6, al=1-(t-100)/18;
-    ctx.save(); ctx.globalAlpha=Math.max(0,al); ctx.strokeStyle='#22c55e'; ctx.lineWidth=3;
-    ctx.beginPath(); ctx.ellipse(mx,ly+3,rr*1.6,rr*0.35,0,0,Math.PI*2); ctx.stroke(); ctx.restore();
-  }
-
-  if(t>=103 && t<116){
-    var bx=clamp(mx-100,10,W-220), by=ly-250;
-    ctx.fillStyle='rgba(2,6,23,0.88)'; ctx.fillRect(bx,by,210,84);
-    ctx.strokeStyle='#22c55e'; ctx.lineWidth=2; ctx.strokeRect(bx,by,210,84);
-    txt('⏱ 23:00', bx+105, by+22, 18, '#86efac');
-    txt('📆 '+DATE_FA, bx+105, by+46, 16, '#e2e8f0');
-    var pr=seg(t,103,113);
-    ctx.fillStyle='#14532d'; ctx.fillRect(bx+20,by+64,170,8);
-    ctx.fillStyle='#22c55e'; ctx.fillRect(bx+20,by+64,170*pr,8);
-  }
-
-  var winSide=-st.dir;
-  var winCX=(winSide>0)?710:250, winCY=235;
-  var edgeX=winCX-winSide*RX;
-
-  // ۱) خط اول کشیده می‌شود (۱۱۶ تا ۱۲۰)
-  if(t>=116 && t<184){
-    var p=ease(seg(t,116,120));
-    var ex=lerp(tip.x,edgeX,p), ey=lerp(tip.y,winCY,p);
-    ctx.save();
-    ctx.globalAlpha=0.35; ctx.strokeStyle='#22d3ee'; ctx.lineWidth=14;
-    ctx.beginPath(); ctx.moveTo(tip.x,tip.y); ctx.lineTo(ex,ey); ctx.stroke();
-    ctx.globalAlpha=0.9; ctx.lineWidth=2;
-    ctx.beginPath(); ctx.moveTo(tip.x,tip.y); ctx.lineTo(ex,ey); ctx.stroke();
+  // ساعت نیویورک روی سینهٔ آدمک، همراه با زمان فیلم (وقتی پلی می‌شود، می‌چرخد)
+  var nyTot=(NOW_MIN*60+Math.floor(t))%86400;
+  var nyT=pad2(Math.floor(nyTot/3600))+':'+pad2(Math.floor(nyTot/60)%60)+':'+pad2(nyTot%60);
+  outlined('NY '+nyT, mx, ly-148, 13, '#fde68a', 'center', false);
+  // نور سفینه‌ای از بالا: روی زمین پهن می‌شود و آدمک زیر آن می‌رود
+  var bAlpha=clamp((t-BT)/0.6,0,1)*(1-clamp((t-(RT+0.6))/0.8,0,1));
+  if(bAlpha>0){
+    ctx.save(); ctx.globalCompositeOperation='lighter'; ctx.globalAlpha=bAlpha*0.5;
+    var bgr=ctx.createLinearGradient(0,0,0,FAR+14);
+    bgr.addColorStop(0,'rgba(224,242,254,0.10)'); bgr.addColorStop(1,'rgba(224,242,254,0.55)');
+    ctx.fillStyle=bgr; ctx.beginPath(); ctx.moveTo(BX-6,0); ctx.lineTo(BX+6,0); ctx.lineTo(BX+80,FAR+14); ctx.lineTo(BX-80,FAR+14); ctx.closePath(); ctx.fill();
+    ctx.fillStyle='rgba(224,242,254,0.9)'; ctx.beginPath(); ctx.ellipse(BX,FAR+14,95,16,0,0,Math.PI*2); ctx.fill();
     ctx.restore();
   }
 
-  // ۲) بعد پنجره باز می‌شود (۱۲۱ تا ۱۲۵)
-  if(t>=121 && t<184){
-    var s=ease(seg(t,121,125));
-    var rx=RX*Math.max(0.02,s), ry=RY*Math.max(0.02,s);
-    var flick=(t<125)?(0.6+0.4*Math.abs(Math.sin(t*50))):1;
-    ctx.save(); ctx.globalAlpha=flick;
-    ctx.beginPath(); ctx.ellipse(winCX,winCY,rx,ry,0,0,Math.PI*2);
-    ctx.fillStyle='rgba(8,47,73,0.82)'; ctx.fill();
-    ctx.shadowColor='#22d3ee'; ctx.shadowBlur=24;
-    ctx.strokeStyle='#22d3ee'; ctx.lineWidth=3; ctx.stroke();
-    ctx.shadowBlur=0; ctx.restore();
+  // نام THEPILOTTMNL001 در هوا، بالای سر آدمک، کمی تار
+  ctx.save(); ctx.filter='blur(1.2px)'; ctx.globalAlpha=0.55;
+  txt(VIEWER_PARAM||'THEPILOTTMNL001', mx, ly-238, 17, '#e2e8f0', 'center');
+  ctx.restore();
 
-    if(t>=125){
-      ctx.save();
-      ctx.beginPath(); ctx.ellipse(winCX,winCY,RX-3,RY-3,0,0,Math.PI*2); ctx.clip();
-      ctx.strokeStyle='rgba(34,211,238,0.08)'; ctx.lineWidth=1;
-      for(var gy=winCY-RY;gy<winCY+RY;gy+=30){ ctx.beginPath(); ctx.moveTo(winCX-RX,gy); ctx.lineTo(winCX+RX,gy); ctx.stroke(); }
-      for(var gxp=winCX-RX;gxp<winCX+RX;gxp+=30){ ctx.beginPath(); ctx.moveTo(gxp,winCY-RY); ctx.lineTo(gxp,winCY+RY); ctx.stroke(); }
-      var sy=winCY-RY+((t*120)%(2*RY));
-      ctx.fillStyle='rgba(34,211,238,0.12)'; ctx.fillRect(winCX-RX,sy,2*RX,8);
-      ctx.restore();
-
-      txt('● اطلاعات پوزیشن (وقت نیویورک)', winCX, winCY-124, 15, '#67e8f9', 'center');
-      var typed=clamp((t-TYPE_START)*CPS,0,TOTAL);
-      var ti=Math.floor(typed);
-      if(ti!==lastTi){ if(lastTi>=0&&ti>lastTi) clickSound(); lastTi=ti; }
-      ROWS.forEach(function(Rw){
-        var n=clamp(typed-Rw.before,0,Rw.chars.length);
-        var str=Rw.chars.slice(0,n).join('');
-        var y=winCY+Rw.y;
-        var size=Rw.big?19:14;
-        txt(str, winCX, y, size, Rw.c, 'center');
-        if(n>0 && n<Rw.chars.length && Math.floor(t*2.5)%2===0){
-          ctx.font='bold '+size+'px '+FONT;
-          var wd=ctx.measureText(str).width;
-          txt('▌', winCX+wd/2+6, y, size, '#67e8f9', 'center');
-        }
-      });
-    }
-  }
-
-  // متن آدمک: بالای صفحه؛ ۳ ثانیه بعد از تایپ کامل حذف می‌شود
-  NARR.forEach(function(N){
-    if(t<N.start) return;
-    var nch=Array.from(N.t);
-    var doneAt=N.start+nch.length/N.cps;
-    if(t>doneAt+3) return;
-    ctx.fillStyle='rgba(0,0,0,0.6)'; ctx.fillRect(0,0,W,84);
-    var nn=clamp((t-N.start)*N.cps,0,nch.length);
-    var line=nch.slice(0,nn).join('');
-    txt(line, W/2, N.y, 19, N.c, 'center');
-    if(nn<nch.length && Math.floor(t*3)%2===0){
-      ctx.font='bold 19px '+FONT;
-      var wn=ctx.measureText(line).width;
-      txt('▌', W/2+wn/2+6, N.y, 19, '#67e8f9', 'center');
-    }
+  // حلقهٔ چشمک‌زن زیر پا، در هر بار اسکن
+  SCANT.forEach(function(s0){
+    var d=t-s0;
+    if(d<0||d>=1.2) return;
+    ctx.save(); ctx.globalAlpha=1-d/1.2; ctx.strokeStyle='#22c55e'; ctx.lineWidth=3;
+    ctx.beginPath(); ctx.ellipse(mx,ly+3,20+d*50,(20+d*50)*0.3,0,0,Math.PI*2); ctx.stroke(); ctx.restore();
   });
 
-  // زیرنویس‌ها: پایین صفحه، پشت سر هم
+  // اسکنر: موارد یکی‌یکی بالا می‌آیند و در گوشهٔ بالا سمت چپ می‌مانند
+  var SX=40, SY0=34, SPITCH=28;
+  if(t>=SCANT[0]){
+    SCANS.forEach(function(S,i){
+      var s0=SCANT[i]; if(t<s0) return;
+      var y=lerp(SY0+i*SPITCH+26, SY0+i*SPITCH, ease(seg(t,s0,s0+0.6)));
+      ctx.save(); ctx.globalAlpha=clamp((t-s0)/0.3,0,1)*FADE;
+      ctx.fillStyle='rgba(0,0,0,0.6)'; ctx.fillRect(SX,y-13,220,26);
+      ctx.strokeStyle='#22d3ee'; ctx.lineWidth=2; ctx.strokeRect(SX,y-13,220,26);
+      txt('✔ '+S.t, SX+110, y, 14, '#67e8f9', 'center');
+      ctx.restore();
+    });
+  }
+
+  var CT0=5;
+  // سلام: بالای صفحه
+  var T1=[{t:'سلام', s:CT0, y:30}, {t:'خدمت شما عزیزان ....', s:CT0+3, y:56}];
+  ctx.save(); ctx.globalAlpha=FADE;
+  T1.forEach(function(C){
+    if(t<C.s) return;
+    var n=Math.floor((t-C.s)*12);
+    txt(Array.from(C.t).slice(0,n).join(''), 620, C.y, 20, '#f5ecd6', 'center');
+  });
+  ctx.restore();
+  // تایپ یک بلوک چندخطی، کاراکتر به کاراکتر، بدون صدای کلید
+  function typeBlock(lines,t0,cps,x,y0,pitch,size,color,align,pauses){
+    pauses=pauses||[];
+    ctx.save(); ctx.globalAlpha=FADE;
+    var acc=t0;
+    lines.forEach(function(L,i){
+      acc+=(pauses[i]||0);
+      var len=Array.from(L).length;
+      var n=Math.floor(clamp((t-acc)*cps,0,len));
+      acc+=len/cps;
+      if(n<=0) return;
+      outlined(Array.from(L).slice(0,n).join(''), x, y0+i*pitch, size, color, align, false);
+    });
+    ctx.restore();
+  }
+  // شرح: thepilot در حال شناسایی مقدمات قبل ورود به پوزیشن
+  var NAR=[
+    'thepilot در حال شناسایی مقدمات قبل ورود به پوزیشن است',
+    NAR_L1,
+    'را انجام می‌دهد؛',
+    'تلاش می‌کند یک پوزیشن دقیق و با کیفیت را مهیا کند.',
+    '', '', '', '', '',
+    'البته این شماره ارتفاع برای ما حائز اهمیت است.'
+  ];
+  typeBlock(NAR, 56, 16, 930, 82, 28, 18, '#f5ecd6', 'right', [0,0,0,0,6]);
+  // محتوای آخر پوزیشن، بعد از شرح (مثل متن بالا، حرف به حرف تایپ می‌شود)
+  var FIN=[
+    'نقطهٔ شروع   📆 20:00 27oct 🚩',
+    'تایم اول ⏱ 3=21',
+    'تایم دوم ⏱10=10',
+    'کندل اول 🕯 6🎯',
+    'کندل دوم 🕯 6🏁'
+  ];
+  if(!FILM_DATA) typeBlock(FIN, 100, 14, 930, 380, 27, 19, '#fde68a', 'right');
+  if(FILM_DATA && CONTENT_ROWS){
+    var CY0=82+9*28+28;   // درست زیر جملهٔ «البته»
+    var acc=CONT_T0;
+    CONTENT_ROWS.forEach(function(R,i){
+      var len=R.chars.length;
+      var n=Math.floor(clamp((t-acc)*CONT_CPS,0,len));
+      acc+=len/CONT_CPS+CONT_GAP;
+      if(n<=0) return;
+      outlined(R.chars.slice(0,n).join(''), 930, CY0+i*15, 14, R.c, 'right', false);
+    });
+  }
+
   // زیرنویس‌ها: یک خط که از سمت چپ وارد و از سمت راست خارج می‌شود
   SUBS.forEach(function(S){
     if(t<S.s||t>S.e) return;
@@ -449,16 +477,17 @@ function scene(t){
   }
 
   // نام در بالا سمت راست
-  txt('thepilottmnl', W-16, 22, 16, '#e2e8f0', 'right');
+  txt(VIEWER_PARAM||'thepilottmnl', W-16, 22, 16, '#e2e8f0', 'right');
   if(VIEWER_PARAM) txt('کاربر: '+VIEWER_PARAM, W-16, 44, 13, '#94a3b8', 'right');
 }
 
 var lastTi=-1;
 
+window.__api={scene:scene, setDir:function(d){st.dir=d; buildFP();}, get TOTAL(){return TOTAL;}, DUR:DUR, TYPE_START:TYPE_START, CPS:CPS};
 var playBtn=document.getElementById('play'), pauseBtn=document.getElementById('pause'), resetBtn=document.getElementById('reset'), speedSel=document.getElementById('speed');
 playBtn.onclick=function(){
   if(st.t>=DUR) st.t=0;
-  if(st.t===0){ st.dir=-st.dir; buildFP(); lastTi=-1; }
+  if(st.t===0){ buildFP(); lastTi=-1; }
   st.playing=true;
   if(!actx) audioInit(); else if(actx.state==='suspended') actx.resume();
 };
@@ -470,11 +499,11 @@ function frame(now){
   var dt=st.last?Math.min(0.1,(now-st.last)/1000):0; st.last=now;
   if(st.playing){ st.t+=dt*st.speed; if(st.t>=DUR){ st.t=DUR; st.playing=false; } }
   ctx.setTransform(1,0,0,1,0,0);
-  scene(st.t);
+  if(!window.__manual) scene(st.t);
   requestAnimationFrame(frame);
 }
 requestAnimationFrame(frame);
 })();
 </script>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a5d0b23e7e67d25c',t:'MTc5NTEwNjg0MQ=='};var l=window.parent.location,o;try{o=new URL(l.origin).origin}catch(e){try{o=new URL(new URL(l.href).origin).origin}catch(e){o=''}}var u='/cdn-cgi/challenge-platform/scripts/jsd/main.js?ray=a5d0b23e7e67d25c',a=document.createElement('script');a.src=o?new URL(u,o).href:u;document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</body>
 </html>
