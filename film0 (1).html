@@ -24,12 +24,20 @@ a.btn{display:none;padding:9px 14px;border-radius:8px;background:#16a34a;color:#
     <button id="play" type="button">▶ پخش</button>
     <button id="pause" class="alt" type="button">⏸ توقف</button>
     <button id="reset" class="alt" type="button">↺ از اول</button>
+<span style="display:inline-flex;flex-wrap:wrap;align-items:center;gap:6px;margin-inline-start:8px;font-size:13px"><label style="display:inline-flex;align-items:center;gap:6px;cursor:pointer;padding:4px 10px;border:1px solid #888;border-radius:8px">🎙 صدای من <input id="voiceFile" type="file" accept="audio/*" style="max-width:190px"></label><b id="voiceInfo" style="color:#fbbf24;font-weight:600">هنوز صدایی انتخاب نشده</b></span>
     <select id="speed" class="alt">
       <option value="1">سرعت واقعی (۳ دقیقه)</option>
       <option value="10" selected>۱۰ برابر</option>
       <option value="30">۳۰ برابر</option>
     </select>
     <a id="dl" class="btn" href="#" download>⬇ دانلود ویدیو</a>
+  </div>
+  <div id="vidBox" style="margin:10px 0;padding:10px;border:1px solid #334155;border-radius:10px;background:#0b1220">
+    <div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px;font-size:13px;color:#e2e8f0">
+      <label style="display:inline-flex;align-items:center;gap:6px;cursor:pointer;padding:4px 10px;border:1px solid #888;border-radius:8px">🎬 فایل ویدیوی ضبط‌شده <input id="vidFile" type="file" accept="video/*,audio/*" style="max-width:200px"></label>
+      <b id="vidInfo" style="color:#fbbf24;font-weight:600">هنوز ویدیویی انتخاب نشده</b>
+    </div>
+    <video id="vidEl" controls playsinline style="display:none;width:100%;max-height:300px;margin-top:8px;background:#000;border-radius:8px"></video>
   </div>
   <div id="rec" class="rec"></div>
 </div>
@@ -295,7 +303,7 @@ function recStart(){
   if(REC.mr) return;
   if(typeof MediaRecorder==='undefined'||!cv.captureStream){ recSetMsg('ضبط در این مرورگر پشتیبانی نمی‌شود. از کروم یا سامسونگ اینترنت استفاده کنید'); return; }
   var tracks=[];
-  try{ tracks=cv.captureStream(30).getVideoTracks(); }catch(e){ recSetMsg('ضبط تصویر شروع نشد: '+e.message); return; }
+  try{ tracks=(window.compStart?window.compStart():cv.captureStream(30)).getVideoTracks(); }catch(e){ recSetMsg('ضبط تصویر شروع نشد: '+e.message); return; }
   if(recDest) tracks=tracks.concat(recDest.stream.getAudioTracks());
   var mime=recPickMime();
   var mr;
@@ -315,6 +323,7 @@ function recStart(){
 }
 function recFinish(){
   clearInterval(REC.timer);
+  if(window.compStop) window.compStop();
   var type=(REC.mime||'video/webm').split(';')[0];
   REC.ext=(type.indexOf('mp4')>=0)?'mp4':'webm';
   var blob=new Blob(REC.chunks,{type:type});
@@ -331,7 +340,7 @@ var AC=window.AudioContext||window.webkitAudioContext, actx=null, master=null, c
 function audioInit(){
   if(!AC||actx) return;
   actx=new AC();
-  master=actx.createGain(); master.gain.value=0.9; master.connect(actx.destination);
+  master=actx.createGain(); master.gain.value=0.9; master.connect(actx.destination); window.__audioCtx=actx; window.__audioMaster=master;
   try{ recDest=actx.createMediaStreamDestination(); master.connect(recDest); }catch(e){ recDest=null; }
   var freqs=[110,164.81,220,261.63];
   freqs.forEach(function(f,i){
@@ -535,6 +544,33 @@ function bgmStart(){
   if(bgmEl) bgmEl.play().catch(function(){});
 }
 
+// ===== صدای شما: فایل ضبط‌شده را انتخاب کنید؛ همراه فیلم پخش و در ضبط/دانلود هم می‌آید =====
+var voiceEl=new Audio(), voiceNode=null, voiceGain=null;
+voiceEl.preload='auto';
+(function(){ var vf=document.getElementById('voiceFile');
+  if(vf) vf.onchange=function(){ var f=this.files&&this.files[0]; if(!f) return;
+    voiceEl.src=URL.createObjectURL(f); voiceEl.load();
+    voiceInfoSet('در حال بارگذاری: '+f.name,'#fbbf24');
+    if(st.playing) voiceStart(); };
+  voiceEl.addEventListener('loadedmetadata',function(){
+    var fn=(document.getElementById('voiceFile').files[0]||{}).name||'';
+    voiceInfoSet('✔ صدا آماده ('+Math.round(voiceEl.duration)+' ثانیه): '+fn,'#86efac'); });
+  voiceEl.addEventListener('error',function(){ voiceInfoSet('✖ این فایل خوانده نشد. فایل صوتی دیگری انتخاب کنید','#fca5a5'); });
+})();
+function voiceInfoSet(t,c){ var e=document.getElementById('voiceInfo'); if(e){ e.textContent=t; e.style.color=c; } }
+function voiceSetup(){
+  if(voiceNode||!actx||!voiceEl.src) return;
+  try{ voiceNode=actx.createMediaElementSource(voiceEl); voiceGain=actx.createGain(); voiceGain.gain.value=1;
+       voiceNode.connect(voiceGain); voiceGain.connect(master); }catch(e){ voiceNode=null; }
+}
+function voiceStart(){
+  if(!voiceEl.src) return;
+  voiceSetup();
+  if(Math.abs(voiceEl.currentTime-(st.t||0))>0.5) voiceEl.currentTime=st.t||0;
+  voiceEl.play().catch(function(){});
+}
+function voiceStop(){ voiceEl.pause(); }
+
 var lastTi=-1;
 
 var playBtn=document.getElementById('play'), pauseBtn=document.getElementById('pause'), resetBtn=document.getElementById('reset'), speedSel=document.getElementById('speed');
@@ -545,11 +581,11 @@ playBtn.onclick=function(){
   try{ if(!actx) audioInit(); else if(actx.state==='suspended') actx.resume(); }catch(e){ recSetMsg('صدا: '+e.message); }
   if(REC.mr && REC.mr.state==='paused') REC.mr.resume();
   else if(!REC.mr) recStart();
-  bgmStart();
+  bgmStart(); voiceStart();
 };
-pauseBtn.onclick=function(){ bgmEl.pause(); st.playing=false; if(actx&&actx.state==='running') actx.suspend(); if(REC.mr&&REC.mr.state==='recording') REC.mr.pause(); };
-resetBtn.onclick=function(){ bgmEl.pause(); bgmEl.currentTime=0; st.t=0; st.playing=false; lastTi=-1; if(actx&&actx.state==='running') actx.suspend(); recStop(); };
-speedSel.onchange=function(){ st.speed=+this.value; bgmUpdate(); };
+pauseBtn.onclick=function(){ bgmEl.pause(); voiceStop(); st.playing=false; if(actx&&actx.state==='running') actx.suspend(); if(REC.mr&&REC.mr.state==='recording') REC.mr.pause(); };
+resetBtn.onclick=function(){ bgmEl.pause(); bgmEl.currentTime=0; voiceStop(); voiceEl.currentTime=0; st.t=0; st.playing=false; lastTi=-1; if(actx&&actx.state==='running') actx.suspend(); recStop(); };
+speedSel.onchange=function(){ st.speed=+this.value; bgmUpdate(); voiceEl.playbackRate=st.speed; };
 recSetMsg('نسخهٔ ضبط ۳ — با «▶ پخش» ضبط خودکار شروع می‌شود؛ آخر فیلم فایل دانلود می‌شود');
 buildFP();
 function frame(now){
@@ -561,6 +597,103 @@ function frame(now){
 }
 requestAnimationFrame(frame);
 })();
+
+(function(){
+  var vf=document.getElementById('vidFile'), ve=document.getElementById('vidEl'), vi=document.getElementById('vidInfo');
+  function set(t,c){ vi.textContent=t; vi.style.color=c; }
+  vf.addEventListener('change',function(){
+    var f=this.files&&this.files[0]; if(!f) return;
+    if(ve.src) URL.revokeObjectURL(ve.src);
+    ve.src=URL.createObjectURL(f); ve.style.display='block'; ve.load();
+    set('در حال بارگذاری: '+f.name,'#fbbf24');
+  });
+  ve.addEventListener('loadedmetadata',function(){
+    var f=vf.files[0]||{};
+    set('✔ آماده پخش ('+Math.round(ve.duration)+' ثانیه): '+(f.name||''),'#86efac');
+  });
+  ve.addEventListener('error',function(){ set('✖ این فایل پخش نشد. فایل دیگری انتخاب کنید','#fca5a5'); });
+})();
+
+(function(){
+  // ویدیوی آپلودی: ۱۵۰ ثانیه بعد از شروع پخش فیلم، خودکار پخش می‌شود و در ضبط هم وارد می‌شود
+  var AT=150000, acc=0, last=null, fired=false, running=false;
+  var ov=null, ovv=null, soundBtn=null, ovvNode=null, ovvGain=null;
+  var ve=document.getElementById('vidEl');
+  var cvEl=document.getElementById('cv');
+  function btn(t,fn){ var b=document.createElement('button'); b.textContent=t; b.onclick=fn;
+    b.style.cssText='padding:8px 12px;background:#1e293b;color:#fff;border:1px solid #475569;border-radius:8px;font-size:14px;cursor:pointer'; return b; }
+  function goFs(){ try{ var p=ov.requestFullscreen&&ov.requestFullscreen(); if(p&&p.catch) p.catch(function(){}); }catch(e){} }
+  function closeOv(){
+    if(ovv) ovv.pause();
+    if(ov) ov.style.display='none';
+    if(document.fullscreenElement&&document.exitFullscreen) document.exitFullscreen().catch(function(){});
+  }
+  // صدای ویدیوی آپلودی را وارد گراف صدای فیلم می‌کند تا هم شنیده شود و هم در ضبط بیاید
+  function connectAudio(){
+    if(ovvNode||!window.__audioCtx||!window.__audioMaster) return;
+    try{
+      ovvNode=window.__audioCtx.createMediaElementSource(ovv);
+      ovvGain=window.__audioCtx.createGain();
+      ovvNode.connect(ovvGain); ovvGain.connect(window.__audioMaster);
+    }catch(e){ ovvNode=null; }
+  }
+  function mk(){
+    ov=document.createElement('div'); ov.id='autoOv';
+    ov.style.cssText='position:fixed;inset:0;z-index:200000;background:#000;display:none;align-items:center;justify-content:center';
+    ovv=document.createElement('video'); ovv.controls=true; ovv.playsInline=true;
+    ovv.style.cssText='width:100%;height:100%;object-fit:contain;background:#000';
+    ovv.addEventListener('ended',function(){ closeOv(); });
+    soundBtn=btn('🔊 روشن کردن صدا',function(){ ovv.muted=false; ovv.play().catch(function(){}); soundBtn.style.display='none'; });
+    soundBtn.style.display='none';
+    var bar=document.createElement('div');
+    bar.style.cssText='position:absolute;top:10px;left:10px;right:10px;display:flex;justify-content:space-between;gap:8px;z-index:1';
+    bar.appendChild(soundBtn); bar.appendChild(btn('⛶ تمام‌صفحه',goFs)); bar.appendChild(btn('✕ بستن',closeOv));
+    ov.appendChild(ovv); ov.appendChild(bar); document.body.appendChild(ov);
+  }
+  // پخش خودکار: اول با صدا؛ اگر مرورگر اجازه نداد، بی‌صدا شروع می‌شود و دکمهٔ صدا ظاهر می‌شود
+  function startVideo(){
+    ovv.muted=false;
+    connectAudio();
+    var p=ovv.play();
+    if(p&&p.catch) p.catch(function(){
+      ovv.muted=true; soundBtn.style.display='inline-block';
+      ovv.play().catch(function(){});
+    });
+  }
+  function fire(){
+    fired=true;
+    if(!ov) mk();
+    ovv.src=ve.src; ov.style.display='flex';
+    ovv.currentTime=0; startVideo(); goFs();
+  }
+
+  // ترکیب تصویر برای ضبط: تصویر فیلم + ویدیوی آپلودی وقتی روی صفحه است
+  var compC=document.createElement('canvas'), compG=compC.getContext('2d'), compOn=false, compRaf=0;
+  function compLoop(){
+    if(!compOn) return;
+    compG.drawImage(cvEl,0,0,compC.width,compC.height);
+    if(ov && ov.style.display==='flex' && ovv && ovv.readyState>=2 && ovv.videoWidth){
+      var W=compC.width, H=compC.height, vw=ovv.videoWidth, vh=ovv.videoHeight;
+      var s=Math.min(W/vw,H/vh), dw=vw*s, dh=vh*s;
+      compG.fillStyle='#000'; compG.fillRect(0,0,W,H);
+      compG.drawImage(ovv,(W-dw)/2,(H-dh)/2,dw,dh);
+    }
+    compRaf=requestAnimationFrame(compLoop);
+  }
+  window.compStart=function(){ compC.width=cvEl.width; compC.height=cvEl.height; compOn=true; compLoop(); return compC.captureStream(30); };
+  window.compStop=function(){ compOn=false; cancelAnimationFrame(compRaf); };
+
+  setInterval(function(){
+    var now=performance.now();
+    if(last===null){ last=now; return; }
+    var dt=now-last; last=now;
+    if(running && !fired) acc+=dt;
+    if(!fired && ve.src && acc>=AT) fire();
+  },200);
+  document.getElementById('reset').addEventListener('click',function(){ running=false; acc=0; fired=false; closeOv(); });
+  document.getElementById('play').addEventListener('click',function(){ running=true; });
+  document.getElementById('pause').addEventListener('click',function(){ running=false; });
+})();
 </script>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a6098f469d85bd6b',t:'MTc5NTcwMzA5Nw=='};var l=window.parent.location,o;try{o=new URL(l.origin).origin}catch(e){try{o=new URL(new URL(l.href).origin).origin}catch(e){o=''}}var u='/cdn-cgi/challenge-platform/scripts/jsd/main.js?ray=a6098f469d85bd6b',a=document.createElement('script');a.src=o?new URL(u,o).href:u;document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a6152681ec981c2c',t:'MTc5NTgyNDYzNQ=='};var l=window.parent.location,o;try{o=new URL(l.origin).origin}catch(e){try{o=new URL(new URL(l.href).origin).origin}catch(e){o=''}}var u='/cdn-cgi/challenge-platform/scripts/jsd/main.js?ray=a6152681ec981c2c',a=document.createElement('script');a.src=o?new URL(u,o).href:u;document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
